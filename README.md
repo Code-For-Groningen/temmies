@@ -1,7 +1,8 @@
 A python library which interacts with themis. Use selenium and bs4. I'll try to end development on a somewhat working state. 
 
 ## Intended Features
-* [x] Log in
+* [x] Log in  
+
 To log in, go to the `config.py` file and replace the username and password field with yours. You can now continue to use the rest of the library.
 * [ ] Classes, methods and attributes described in the map below
  
