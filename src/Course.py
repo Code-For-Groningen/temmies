@@ -1,28 +1,25 @@
 # Class to handle courses
 from bs4 import BeautifulSoup
 from requests import Session
-from Year import Year
 from Assignment import Assignment
 import re
 from Base import Base
+from exceptions.CourseUnavailable import CourseUnavailable
 
 class Course(Base):
-  def __init__(url:str, name:str, session:Session, parent:Year):
-    super().__init__()
-    self.url = self.__constructURL("name")
+  # Extend the Base class init
+  def __init__(self, url:str, name:str, session:Session, parent):
+    super().__init__(url, name, session, parent)
     self.assignments = []
+    self.__courseAvailable(self.session.get(self.url))
 
   def __str__(self):
     return f"Course {self.name} in year {self.parent.year}"
-
-  def __constructURL(self, name:str):
-    # We have to find the name in the page and find its corresponding url
-    r = self.session.get(url)
-    soup = BeautifulSoup(r.text, 'lxml')
-    # Find the course
-    course = soup.find('a', text=self.name)
-    # Get the url
-    return course['href']
+  
+  def __courseAvailable(self, r):
+    # Check if we got an error
+    if "Something went wrong" in r.text:
+      raise CourseUnavailable()
   
   @property
   def courseInfo(self):
@@ -55,22 +52,14 @@ class Course(Base):
     # For each link in the course page, get the assignment
     r = self.session.get(self.url)
     soup = BeautifulSoup(r.text, 'lxml')
-    # Find the assignments, they are in <li class="large">
-    assignments = soup.find_all('li', class_='large')
+    # Find the big ul
+    print(soup)
+    section = soup.find('div', class_="ass-children")
+    ul = section.find('ul', class_='round')
     
-    # FIXME: They sometimes put other stuff in these li's, so we have to filter them out
-
-    # Create assignment object for each and store them in the class
-    for assignment in assignments:
-      # Get the name
-      name = assignment.find('a').text
-      # Get the url
-      url = assignment.find('a')['href']
-      # Create the object
-      self.assignments.append(Assignment(url=url, name=name, session=self.session, course=self))
-    
-
-  def getGrades(self):
-    pass
-
-  
+    # IDEA: They sometimes put other stuff in these li's, so we have to filter them out
+    print(ul)
+    print(type(ul))
+    # Transform them into Assignment objects
+    # I want to call the __liLargeToAssignments method from the Base class
+    return self.liLargeToAssignments(ul)
