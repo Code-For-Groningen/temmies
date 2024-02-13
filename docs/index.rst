@@ -5,7 +5,7 @@
 
 Temmies!
 ========================================
-.. image:: images/temmie.png
+.. image:: https://static.wikia.nocookie.net/temmie1/images/2/29/Temmie.png/revision/latest?cb=20170119231511
    :align: center
 .. toctree::
    :maxdepth: 2
