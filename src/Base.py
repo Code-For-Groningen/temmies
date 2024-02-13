@@ -33,6 +33,28 @@ class Base:
     
     return submission 
   
+
+  # TODO: Fix
+  def getDownloadable(self, soup) -> list:
+    # Make sure we only get the ones that have a link
+    # We parse the cfg and check for the key "Downloads"
+    # Check if downloads are available
+    print(soup)
+    cfg = soup.find('div', class_='cfg-container round')
+    print(cfg)
+    cfg = self.__parseCfgBlock(cfg)
+    # Get the downloads
+    downloads = cfg.get("Downloads", None)
+    if downloads == None:
+      return []
+    # Get the links
+    links = downloads.find_all('a')
+    files = []
+    for link in links:
+      files.append(Base(link['href'], link.text, self.session, self))
+    
+    return files
+
   def getSubmissions(self):
     # We change the url where course becomes stats
     url = self.url.replace("course", "stats")

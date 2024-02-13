@@ -5,6 +5,7 @@ from Course import Course
 from requests import Session
 from exceptions.CourseUnavailable import CourseUnavailable
 
+# Works 
 class Year:
   def __init__(self, session:Session, parent, start_year:int, end_year:int):
     self.start = start_year
@@ -25,9 +26,10 @@ class Year:
     courses = []
     for li in lis:
       try:
+        suffix = (li.a['href'].replace(f"course/{self.start}-{self.year}", ""))
         courses.append(
           Course(
-            self.url + li.a['href'],
+            self.url + suffix,
             li.a.text,
             self.session,
             self
@@ -37,7 +39,8 @@ class Year:
         if errors:
           raise CourseUnavailable(f"Course {li.a.text} in year {self.start}-{self.year} is not available")
         else:
-          pass
+          print("error with course", li.a.text)
+          continue
       
       
     return courses
@@ -47,6 +50,6 @@ class Year:
     r = self.session.get(self.url)
     soup = BeautifulSoup(r.text, 'lxml')
     # Search by name
-    course = soup.find('a', text=name)
+    course = self.url + soup.find('a', text=name)['href'].replace(f"course/{self.start}-{self.year}", "")
     # Get the url and transform it into a course object
-    return Course(url=course['href'], name=name, session=self.session, year=self)
+    return Course(url=course, name=name, session=self.session, parent=self)

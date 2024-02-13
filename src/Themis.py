@@ -60,11 +60,3 @@ class Themis:
       years.append(Year(self.session, self, int(year[0]), int(year[1])))
 
     return years  # Return a list of year objects
-
-
-# This is the main file, so we have to run the main function
-
-def main():
-  themis = Themis()
-  year = themis.getYear(2019, 2020)
-  print(year.getCourses())

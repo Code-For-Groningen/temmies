@@ -5,7 +5,8 @@ from bs4 import BeautifulSoup
 from Base import Base
 
 class Downloadable(Base):
-  def __init__(self, session:Session, parent):
+  def __init__(self, name, session:Session, parent):
+    self.name = name
     self.session = session
     self.parent = parent
     
@@ -21,23 +22,9 @@ class Downloadable(Base):
   def files(self) -> list:
     # Create a list of files
     # They are all links in a span with class "cfg-val"
-    r = self.session.get(self.url)
+    r = self.session.get("https://themis.housing.rug.nl" + self.parent.url)
     soup = BeautifulSoup(r.text, 'lxml')
-    # Make sure we only get the ones that have a link
-    # We parse the cfg and check for the key "Downloads"
-    cfg = soup.find('div', class_='cfg-container round')
-    cfg = self.__parseCfgBlock(cfg)
-    # Get the downloads
-    downloads = cfg.get("Downloads", None)
-    if downloads == None:
-      return []
-    # Get the links
-    links = downloads.find_all('a')
-    files = []
-    for link in links:
-      files.append(File(link['href'], link.text, self.session, self))
-    
-    return files
+    return self.getDownloadable(soup)
 
   def download(self, filename:str) -> str:
     # Download the file
