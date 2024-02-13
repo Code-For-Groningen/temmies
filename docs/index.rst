@@ -5,7 +5,7 @@
 
 Temmies!
 ========================================
-.. image:: https://static.wikia.nocookie.net/temmie1/images/2/29/Temmie.png/revision/latest?cb=20170119231511
+.. image:: https://static.wikia.nocookie.net/undertale/images/7/7b/Temmie_battle_idle.gif
    :align: center
 .. toctree::
    :maxdepth: 2
