@@ -1,7 +1,7 @@
 # Class to handle courses
 from bs4 import BeautifulSoup
 from requests import Session
-from Assignment import Assignment
+from ExerciseGroup import ExerciseGroup
 import re
 from Base import Base
 from exceptions.CourseUnavailable import CourseUnavailable
@@ -24,12 +24,12 @@ class Course(Base):
   
   def __courseAvailable(self, r):
     # Check if we got an error
-    print(self.url)
+    # print(self.url)
     if "Something went wrong" in r.text:
       raise CourseUnavailable()
   
   @property
-  def courseInfo(self):
+  def info(self):
     return {
       "name": self.name,
       "year": self.parent.year,
@@ -37,36 +37,9 @@ class Course(Base):
       "assignments": [x.name for x in self.assignments]
     }
 
-  def getAssignment(self, name:str) -> Assignment:
-    # Optimization: if we already have the assignments, don't get them again
-    try:
-      if name in [x.name for x in self.assignments]:
-        return name
-    except AttributeError:
-      pass
-
-    # Get the assignment
+  def getExerciseGroups(self):
     r = self.session.get(self.url)
     soup = BeautifulSoup(r.text, 'lxml')
-
-    # Search by name
-    assignment = soup.find('a', text=name)
-    # Get the url and transform it into an assignment object
-    return Assignment(url=assignment['href'], name=name, session=self.session, parent=self)
-
-
-  def getAssignments(self) -> list[Assignment]:
-    # For each link in the course page, get the assignment
-    r = self.session.get(self.url)
-    soup = BeautifulSoup(r.text, 'lxml')
-    # Find the big ul
-    # print(soup)
     section = soup.find('div', class_="ass-children")
-    ul = section.find('ul', class_='round')
-    
-    # IDEA: They sometimes put other stuff in these li's, so we have to filter them out
-    # print(ul)
-    # print(type(ul))
-    # Transform them into Assignment objects
-    # I want to call the __liLargeToAssignments method from the Base class
-    return self.liLargeToAssignments(ul)
+    entries = section.find_all('a', href=True)
+    return [ExerciseGroup(f"https://themis.housing.rug.nl{x['href']}", x.text, self.session, self) for x in entries]

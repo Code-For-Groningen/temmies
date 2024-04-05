@@ -13,9 +13,9 @@ class Exercise(Base):
   def __str__(self):
     return f"Exercise {self.name} in assignment {self.parent.name}"
 
-  # IDEA: Implement test case downloading
-
-  # IDEA : Make this async, so we don't have to wait for the whole output to load
+  def getTests(self) -> list[str]:
+    pass
+    
   def submit(self, file:str, comment:str) -> str:
     # Submit a file
     # The form is in the page with class "cfg-container round"

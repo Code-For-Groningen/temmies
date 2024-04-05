@@ -69,25 +69,4 @@ class Base:
     for div in divs[1:]:
       submissions.append(self.__parseCfgBlock(div))
     return self.__parseCfgBlock(divs[0]), submissions
-
-  def liLargeToAssignments(self, ul:BeautifulSoup) -> list:
-    # Assume that ul is the block surrounding the li elements
-    # Get all the li elements
-    lis = ul.find_all('li', class_='large')
-    # Turn each to an assignment instance
-    assignments = [] 
-    for li in lis:
-      assignments.append(Base(li.a['href'], li.a.text, self.session, self.parent))
-    return assignments
-
-  def liLargeToExercises(self, ul:BeautifulSoup) -> list:
-    # Assume that ul is the block surrounding the li elements
-    # Get all the li elements
-    lis = ul.find_all('li', class_='large')
-    # Turn each to an exercise instance
-    exercises = []
-    for li in lis:
-      exercises.append(Base(li.a['href'], li.a.text, self.session, self.parent))
-    return exercises
-
   
