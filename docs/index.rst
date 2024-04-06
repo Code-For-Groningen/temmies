@@ -13,9 +13,17 @@ Temmies!
 
 
 
-Indices and tables
-==================
+Contents
+--------
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+
+   Home <self>
+   quickstart
+      install
+      usage
+   api
+      Themis
+      Year
+      Course
+      ExerciseGroup

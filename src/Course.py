@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 from requests import Session
 from ExerciseGroup import ExerciseGroup
 import re
-from Base import Base
 from exceptions.CourseUnavailable import CourseUnavailable
 
 # PROBLEM: This implementation is bad due to inconsistencies in the website 
@@ -12,10 +11,13 @@ from exceptions.CourseUnavailable import CourseUnavailable
 # Therefore, we should take that into consideration and spawn the corresponding Exercise or Assignment class
 # Naming becomes a bit inconsistent like that as well, as Assignments could be Exercises. Might opt to call the "assignments" "exerciseGroups" or some shit.
 
-class Course(Base):
+class Course:
   # Extend the Base class init
   def __init__(self, url:str, name:str, session:Session, parent):
-    super().__init__(url, name, session, parent)
+    self.url = url
+    self.name = name
+    self.session = session
+    self.parent = parent
     self.assignments = []
     self.__courseAvailable(self.session.get(self.url))
 
@@ -26,7 +28,7 @@ class Course(Base):
     # Check if we got an error
     # print(self.url)
     if "Something went wrong" in r.text:
-      raise CourseUnavailable()
+      raise CourseUnavailable(message="'Something went wrong'. Course most likely not found. ")
   
   @property
   def info(self):
@@ -42,4 +44,11 @@ class Course(Base):
     soup = BeautifulSoup(r.text, 'lxml')
     section = soup.find('div', class_="ass-children")
     entries = section.find_all('a', href=True)
-    return [ExerciseGroup(f"https://themis.housing.rug.nl{x['href']}", x.text, self.session, self) for x in entries]
+    return [
+      ExerciseGroup(
+        f"https://themis.housing.rug.nl{x['href']}",
+        x,
+        self.session,
+        self,
+        ) 
+      for x in entries]

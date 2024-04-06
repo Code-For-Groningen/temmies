@@ -1,4 +1,4 @@
 class CourseUnavailable(Exception):
-  def __init__(self, message:str="Error in course"):
-    self.message = message
+  def __init__(self, message:str=""):
+    self.message = "Course Error: " + message
     super().__init__(self.message)
