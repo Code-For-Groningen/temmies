@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/rugemmie.gif" />  
+  <img src="docs/img/rugemmie.gif" />  
 </p>
 
 A python library which interacts with themis. Uses bs4. I'll try to end development on a somewhat working state. 
