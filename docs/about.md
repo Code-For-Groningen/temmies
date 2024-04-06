@@ -7,4 +7,4 @@ It has **no** affiliation with the [University of Groningen](https://rug.nl).
 Shoot me an email: boyan(plus)cfg(at)bobokara.com.
 
 ## License
-This project is licensed under the MIT License.
+This project is licensed under the GPL 3.0 license.
