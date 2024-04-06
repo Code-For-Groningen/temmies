@@ -124,5 +124,3 @@ class ExerciseGroup():
                     self)
       for x in folders]
   
-  def recurse(self, folder:str):
-    print(self.url)

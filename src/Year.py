@@ -18,7 +18,7 @@ class Year:
     return f"https://themis.housing.rug.nl/course/{self.start}-{self.year}"
 
   # Method to get the courses of the year
-  def getCourses(self, errors:bool=False) -> list[Course]:
+  def allCourses(self, errors:bool=False) -> list[Course]:
     # lis in a big ul 
     r = self.session.get(self.url)
     soup = BeautifulSoup(r.text, 'lxml')

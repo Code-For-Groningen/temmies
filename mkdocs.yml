@@ -1,0 +1,6 @@
+site_name: Temmies
+nav:
+  - Temmies: index.md
+  - API Reference: api.md
+  - About: about.md
+theme: readthedocs

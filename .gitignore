@@ -1,6 +1,9 @@
-# Config
+# Config - Testing
 config.py
 baller.py 
+
+#Doc env
+.docs_env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

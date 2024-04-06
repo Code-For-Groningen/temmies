@@ -44,7 +44,6 @@ class Themis:
 
 
   def getYear(self, start:int, end:int):
-    # Get the current year
     return Year(self.session, self, start, end)
 
   def allYears(self): 
