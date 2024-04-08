@@ -118,38 +118,57 @@ class ExerciseGroup:
             return None
 
         return [
-            ExerciseGroup(f"https://themis.housing.rug.nl{x['href']}", x, session, self)
+            ExerciseGroup(f"https://themis.housing.rug.nl{x['href']}", x, self.session, self)
             for x in folders
         ]
 
-    def __parseTable(self, soup, url):
+    # Account for judge
+    def __raceCondition(self, soup, url:str, verbose:bool):
+      self.session.get(url.replace("submission", "judge"))
+      return self.__waitForResult(url, verbose, [])
+    
+    def __parseTable(self, soup, url:str, verbose:bool, __printed:list):
         cases = soup.find_all('tr', class_='sub-casetop')
         fail_pass = {}
         i = 1
         for case in cases:
+          name = case.find('td', class_='sub-casename').text
           status = case.find('td', class_='status-icon')
+          
+          if "pending" in status.get("class"):
+            return self.__raceCondition(soup,url,verbose)
+          
           # queued status-icon
           if "queued" in status.get("class"):
             sleep(1) # <- 🗿
-            return self.__waitForResult(url)
+            return self.__waitForResult(url, verbose, __printed)
+          
           if "Passed" in status.text:
-            fail_pass[i] = True
+            fail_pass[int(name)] = True
+            if int(name) not in __printed:
+              print(f"{name}: ✅")
           elif "Wrong output" in status.text:
-            fail_pass[i] = False
+            fail_pass[int(name)] = False
+            if int(name) not in __printed:
+              print(f"{name}: ❌")
           elif ("No status" or "error") in status.text:
-            fail_pass[i] = None
+            fail_pass[int(name)] = None
+            if int(name) not in __printed:
+              print(f"{name}:🐛")
+          
+          __printed.append(int(name))
           i += 1
         return fail_pass
       
-    def __waitForResult(self, url):
+    def __waitForResult(self, url:str, verbose:bool, __printed:list):
         # This waits for result and returns a bundled info package
         r = self.session.get(url)
         soup = BeautifulSoup(r.text, "lxml")
-        return self.__parseTable(soup, url)
+        return self.__parseTable(soup, url, verbose, __printed)
         
         
     # Submit
-    def submit(self, files: list, judge=True, wait=True):
+    def submit(self, files: list, judge=True, wait=True, silent=True):
 
         # Find the form with submit and store the action as url
         # Store then the data-suffixes as file_types - dictionary
@@ -188,13 +207,9 @@ class ExerciseGroup:
         # Close each file
         i = 0
         for f in packaged_files:
-            if i == 1:
-                f[1].close()
-                i = 0
-            else:
-                i += 1
-
+          f[1][1].close()
+          
         if not wait:
             return resp.url if "@submissions" in resp.url else None
 
-        return self.__waitForResult(resp.url)
+        return self.__waitForResult(resp.url, not silent, [])

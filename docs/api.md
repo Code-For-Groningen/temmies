@@ -134,8 +134,21 @@ Downloads all test cases in the exercise group to a directory `path`. Defaults t
 ```
 
 #### `submit(files)`
-Submits the files to the exercise group. (This is not implemented yet)
+Submits the files to the exercise group. Default arguments are `judge=True`, `wait=True` and `silent=True`. `judge` will judge the submission instantly, and `wait` will wait for the submission to finish. Turning off `silent` will print the submission status dynamically.
 
 ```python
-  assignment.submit(["file1.py", "file2.py"])
+  suitcase[7].exercises[1].submit("suitcase.py", silent=False)
+
+  >>> 1: ✅
+  >>> 2: ✅
+  >>> 3: ✅
+  >>> 4: ✅
+  >>> 5: ✅
+  >>> 6: ✅
+  >>> 7: ✅
+  >>> 8: ✅
+  >>> 9: ✅
+  >>> 10: ✅
 ```
+
+
