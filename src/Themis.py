@@ -31,6 +31,7 @@ class Themis:
       # get the csrf token and add it to payload
       csrfToken = soup.find('input',attrs = {'name':'_csrf'})['value']
       data['_csrf'] = csrfToken
+      data['sudo'] = user.lower()
 
       # Login
       r = s.post(url,data=data,headers = headers)

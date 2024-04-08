@@ -1,6 +1,6 @@
 # Config - Testing
 config.py
-baller.py 
+tests/
 
 #Doc env
 .docs_env
