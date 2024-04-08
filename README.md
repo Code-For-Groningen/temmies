@@ -6,10 +6,13 @@ A python library which interacts with themis. Uses bs4. I'll try to end developm
 
 ## Intended Features
 * [x] Log in  
+* [x] Submit
+* [x] Bulk download of test cases and files
+* [ ] Submission status
 * [ ] Classes, methods and attributes described in the map below
 
 ## Docs
-[here](http://temmies.rtfd.io/). Heavily WIP.
+[here](http://temmies.rtfd.io/).
 
 ## Class map
 ![map](images/roadmap.png)

@@ -186,7 +186,9 @@ class ExerciseGroup:
             files = temp
 
         # Package the files up into files[]
-
+        # DEBUG: Uncomment for better clarity
+        # print("Submitting files:")
+        # [print(f) for f in files]
         packaged_files = []
         data = {}
         found_type = ""
