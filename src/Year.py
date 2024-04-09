@@ -10,8 +10,8 @@ class Year:
   def __init__(self, session:Session, parent, start_year:int, end_year:int):
     self.start = start_year
     self.year = end_year
-    self.session = session
     self.url = self.__constructUrl()
+    self.__session = session
 
   # Method to set the url
   def __constructUrl(self):
@@ -20,7 +20,7 @@ class Year:
   # Method to get the courses of the year
   def allCourses(self, errors:bool=False) -> list[Course]:
     # lis in a big ul 
-    r = self.session.get(self.url)
+    r = self.__session.get(self.url)
     soup = BeautifulSoup(r.text, 'lxml')
     lis = soup.find_all('li', class_='large')
     courses = []
@@ -31,7 +31,7 @@ class Year:
           Course(
             self.url + suffix,
             li.a.text,
-            self.session,
+            self.__session,
             self
           )
         )
@@ -47,9 +47,9 @@ class Year:
 
   def getCourse(self, name:str) -> Course:
     # Get the course
-    r = self.session.get(self.url)
+    r = self.__session.get(self.url)
     soup = BeautifulSoup(r.text, 'lxml')
     # Search by name
     course = self.url + soup.find('a', text=name)['href'].replace(f"course/{self.start}-{self.year}", "")
     # Get the url and transform it into a course object
-    return Course(url=course, name=name, session=self.session, parent=self)
+    return Course(url=course, name=name, session=self.__session, parent=self)

@@ -61,38 +61,47 @@ courses = year.allCourses()
 
 pf = year.getCourse("Programming Fundamentals (for CS)")
 print(pf.info) # <- course info attribute
-assignments = pf.getExerciseGroups()
+assignments = pf.getGroups()
 ```
 
 ### Methods
-#### `getExerciseGroups()`
-Returns a list of `ExerciseGroup` instances corresponding to all exercise groups visible to the user in a given `Course`.
+#### `getGroups(full=False)`
+Returns a list of `ExerciseGroup` instances corresponding to all exercise groups visible to the user in a given `Course`. Default argument is `full=False`, which will only return the (name, link) of each exercise and folder in the group. If `full=True`, it will traverse the whole course.
+
+You can traverse the course in both cases, although in different ways. 
+
+When you have fully traversed the course, you can access everything via indices and the `exercises` and `folders` attributes of the `ExerciseGroup` instances:
 
 ```python
-assignments = pf.getExerciseGroups()
+  ai_group = ai_course.getGroups(full=True)
+  exercise = ai_group[7].exercises[1] # Week 11 -> Suitcase packing
+  exercise.submit("suitcase.py", silent=False)```
+```
+
+This is equivalent to the case in which we don't traverse the full course using `getGroup` like so:
+
+```python
+ai_group = ai_course.getGroup("Week 11")
+exercise = ai_group.getGroup("Suitcase packing")
+exercise.submit("suitcase.py", silent=False)
+```
+
+### `getGroup(name, full=False)`
+Returns an instance of an `ExerciseGroup` with the name `name`. Default argument is `full=False`, which will only return the (name, link) of each exercise and folder in the group. If `full=True`, it will traverse the whole group.
+
+```python
+week1 = pf.getGroup("Week 1")
 ```
 
 ## `ExerciseGroup`
-When this class is initialized, it will automatically fetch the exercise's info, files and test cases(it might be slow, because it indexes the entire course, which I will fix at some point).
+Setting the `full` flag to `True` will traverse the whole course. 
 
+You can traverse the course in both cases
 * Both folders and exercises are represented as `ExerciseGroup` instances.
 * Folders will have the `amExercise` attribute set to `False`.
 * Folders can have the `downloadFiles` method called on them.
 * Exercises can have the `submit`, `downloadFiles` and `downloadTCs` method called on them.
 
-
-### Usage
-```python
-pf = year.getCourse("Programming Fundamentals (for CS)")
-assignments = pf.getExerciseGroups()
-assignment = assignments[0]
-print(assignment.amExercise) # <- Exercise or folder attribute
-print(assignment.files) # <- Downloadable files attribute
-print(assignment.testCases) # <- Test cases attribute
-
-print(assignment.folders) # <- If the group contains folders, they will be here
-print(assignment.exercises) # <- If the group contains exercises, they will be here
-```
 
 ### Example of folder traversal
 Let's say we have a folder structure like this:
@@ -112,9 +121,14 @@ And we want to get to `Part 2` of `Week 1`'s `Exercise 2`. We would do this:
 ```python
 pf = year.getCourse("Programming Fundamentals (for CS)")
 assignments = pf.getExerciseGroups()
-week1 = assignments[0].folders[0]
-exercise2 = week1.exercises[1]
-part2 = exercise2.folders[1]
+week1 = assignments[0] # Week 1
+exercise2 = week1.folders[1] # Exercise 2
+part2 = exercise2.exercises[1] # Part 2
+
+# Or, if you dont want to traverse the whole course:
+week1 = pf.getGroup("Week 1")
+exercise2 = week1.getGroup("Exercise 2")
+part2 = exercise2.getGroup("Part 2")
 ```
 
 
@@ -133,6 +147,22 @@ Downloads all test cases in the exercise group to a directory `path`. Defaults t
   assignment.downloadTCs()
 ```
 
+#### getGroup(name, full=False)
+This is used when you want to traverse the course dynamically(not recurse through the whole thing). Of course, you can use it even if you've traversed the whole course, but that would overcomplicate things.
+
+```python
+  # Week 1 -> Exercise 2 -> Part 2
+  week1 = pf.getGroups("Week 1")
+  exercise2 = week1.getGroup("Exercise 2")
+  part2 = exercise2.getGroup("Part 2")
+
+  # This is equivalent to(but faster than):
+  week1 = pf.getGroups("Week 1", full=True)
+  exercise2 = week1[1]
+  part2 = exercise2[1]
+```
+
+
 #### `submit(files)`
 Submits the files to the exercise group. Default arguments are `judge=True`, `wait=True` and `silent=True`. `judge` will judge the submission instantly, and `wait` will wait for the submission to finish. Turning off `silent` will print the submission status dynamically.
 
@@ -150,5 +180,6 @@ Submits the files to the exercise group. Default arguments are `judge=True`, `wa
   >>> 9: ✅
   >>> 10: ✅
 ```
+
 
 

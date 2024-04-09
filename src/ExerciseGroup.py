@@ -6,21 +6,19 @@ from time import sleep
 
 
 class ExerciseGroup:
-    def __init__(self, url: str, soup, session, parent):
+    def __init__(self, url: str, soup, session, parent, full:bool):
         self.url = url
         self.name = soup.text
-        self.__raw = soup
-        self.session = session
-        self.parent = parent  # This is unnecessary, but I'll keep it for now
-        self.request = self.session.get(self.url)
-        self.soup = BeautifulSoup(self.request.text, "lxml")
+        self.__prev_raw = soup
+        self.__session = session
+        self.__request = self.__session.get(self.url)
+        self.__raw = BeautifulSoup(self.__request.text, "lxml")
+        self.__full = full
 
-    def __str__(self):
-        return f"ExerciseGroup {self.name} in folder {self.parent.name}"
 
     @property
     def amExercise(self):
-        return "ass-submitable" in self.__raw["class"]
+        return "ass-submitable" in self.__prev_raw["class"]
 
     def submit(self):
         if not self.amExercise:
@@ -31,7 +29,7 @@ class ExerciseGroup:
     # Test cases
     @property
     def testCases(self):
-        section = self.soup.find_all("div", class_="subsec round shade")
+        section = self.__raw.find_all("div", class_="subsec round shade")
         tcs = []
         for div in section:
             res = div.find("h4", class_="info")
@@ -57,14 +55,14 @@ class ExerciseGroup:
             print(f"Downloading {tc.text}")
             # download the files
             with open(f"{path}/{tc.text}", "wb") as f:
-                f.write(self.session.get(url).content)
+                f.write(self.__session.get(url).content)
 
         return self.testCases
 
     # Files
     @property
     def files(self):
-        details = self.soup.find("div", id=lambda x: x and x.startswith("details"))
+        details = self.__raw.find("div", id=lambda x: x and x.startswith("details"))
 
         cfg_lines = details.find_all("div", class_="cfg-line")
 
@@ -88,7 +86,7 @@ class ExerciseGroup:
             print(f"Downloading file {file.text}")
             url = f"https://themis.housing.rug.nl{file['href']}"
             with open(f"{path}/{file.text}", "wb") as f:
-                f.write(self.session.get(url).content)
+                f.write(self.__session.get(url).content)
         return self.files
 
     @property
@@ -96,35 +94,51 @@ class ExerciseGroup:
         if self.amExercise:
             return self
 
-        section = self.soup.find("div", class_="ass-children")
+        section = self.__raw.find("div", class_="ass-children")
         try:
             submittables = section.find_all("a", class_="ass-submitable")
         except AttributeError:
             return None
 
+        if not self.__full:
+            return [(x.text,x['href']) for x in submittables]
         return [
             ExerciseGroup(
-                f"https://themis.housing.rug.nl{x['href']}", x, self.session, self
+                f"https://themis.housing.rug.nl{x['href']}", x, self.__session, self, True
             )
             for x in submittables
         ]
 
     @property
     def folders(self) -> list:
-        section = self.soup.find("div", class_="ass-children")
+        section = self.__raw.find("div", class_="ass-children")
         try:
             folders = section.find_all("a", class_="ass-group")
         except AttributeError:
             return None
 
+        if not self.__full:
+            return [(x.text,x['href']) for x in folders]
+        
         return [
-            ExerciseGroup(f"https://themis.housing.rug.nl{x['href']}", x, self.session, self)
+            ExerciseGroup(f"https://themis.housing.rug.nl{x['href']}", x, self.__session, self, True)
             for x in folders
         ]
+    
+    # Get by name
+    def getGroup(self, name:str, full:bool=False, link:str=None):
+        if link:
+            return ExerciseGroup(link, self.__prev_raw, self.__session, self, full)
+        
+        group = self.__raw.find("a", text=name)
+        if not group:
+            raise IllegalAction(message=f"No such group found: {name}")
+        
+        return ExerciseGroup(f"https://themis.housing.rug.nl{group['href']}", group, self.__session, self, full)
 
     # Account for judge
     def __raceCondition(self, soup, url:str, verbose:bool):
-      self.session.get(url.replace("submission", "judge"))
+      self.__session.get(url.replace("submission", "judge"))
       return self.__waitForResult(url, verbose, [])
     
     def __parseTable(self, soup, url:str, verbose:bool, __printed:list):
@@ -145,15 +159,15 @@ class ExerciseGroup:
           
           if "Passed" in status.text:
             fail_pass[int(name)] = True
-            if int(name) not in __printed:
+            if int(name) not in __printed and verbose == True:
               print(f"{name}: ✅")
           elif "Wrong output" in status.text:
             fail_pass[int(name)] = False
-            if int(name) not in __printed:
+            if int(name) not in __printed and verbose == True:
               print(f"{name}: ❌")
           elif ("No status" or "error") in status.text:
             fail_pass[int(name)] = None
-            if int(name) not in __printed:
+            if int(name) not in __printed and verbose == True: 
               print(f"{name}:🐛")
           
           __printed.append(int(name))
@@ -162,7 +176,7 @@ class ExerciseGroup:
       
     def __waitForResult(self, url:str, verbose:bool, __printed:list):
         # This waits for result and returns a bundled info package
-        r = self.session.get(url)
+        r = self.__session.get(url)
         soup = BeautifulSoup(r.text, "lxml")
         return self.__parseTable(soup, url, verbose, __printed)
         
@@ -173,7 +187,7 @@ class ExerciseGroup:
         # Find the form with submit and store the action as url
         # Store then the data-suffixes as file_types - dictionary
 
-        form = self.soup.find("form")
+        form = self.__raw.find("form")
         if not form:
             raise IllegalAction(message="You cannot submit to this assignment.")
 
@@ -204,7 +218,7 @@ class ExerciseGroup:
 
         data = {"judgenow": "true" if judge else "false", "judgeLanguage": found_type}
 
-        resp = self.session.post(url, files=packaged_files, data=data)
+        resp = self.__session.post(url, files=packaged_files, data=data)
 
         # Close each file
         i = 0

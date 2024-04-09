@@ -30,10 +30,10 @@ year = themis.getYear(2023, 2024)
 pf = year.getCourse("Programming Fundamentals (for CS)")
 
 # Get an assignment
-assignment = pf.getExerciseGroups()
+pf_assignment = pf.getGroup("Assignment 1")
 
-# Download the files
-assignment.downloadFiles()
+# Get a specific exercise
+exercise = pf_assignment.getGroup("Exercise 1")
 ```
 
 
