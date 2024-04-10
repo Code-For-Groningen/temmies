@@ -2,7 +2,7 @@
   <img src="docs/img/rugemmie.gif" />  
 </p>
 <p align="center">
-<img alt="Read the Docs" src="https://img.shields.io/readthedocs/temmies">
+<a href="https://temmies.readthedocs.io/en/latest/"><img alt="Read the Docs" src="https://img.shields.io/readthedocs/temmies"></a>
 <img alt="GitHub" src="https://img.shields.io/github/license/Code-For-Groningen/temmies">
 </p>
 
