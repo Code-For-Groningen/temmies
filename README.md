@@ -1,6 +1,10 @@
 <p align="center">
   <img src="docs/img/rugemmie.gif" />  
 </p>
+<p align="center">
+<img alt="Read the Docs" src="https://img.shields.io/readthedocs/temmies">
+<img alt="GitHub" src="https://img.shields.io/github/license/Code-For-Groningen/temmies">
+</p>
 
 A python library which interacts with themis. Uses bs4. I'll try to end development on a somewhat working state. 
 
