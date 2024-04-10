@@ -18,22 +18,22 @@ pip install temmies
 
 ## Example Usage
 ```python
-import temmies
+from temmies.themis import Themis
 
 # Log in
-themis = temmies.Themis("s-number", "password")
+themis = Themis("s-number", "password")
 
 # Get a year
-year = themis.getYear(2023, 2024)
+year = themis.get_year(2023, 2024)
 
 # Get a course
-pf = year.getCourse("Programming Fundamentals (for CS)")
+course = year.get_course("Programming Fundamentals (for CS)")
 
 # Get an assignment
-pf_assignment = pf.getGroup("Assignment 1")
+assignment = course.get_assignment("Assignment 1")
 
-# Get a specific exercise
-exercise = pf_assignment.getGroup("Exercise 1")
+# Submit 2 files
+assignment.submit(["among.c", "us.py"])
 ```
 
 

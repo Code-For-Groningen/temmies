@@ -14,18 +14,18 @@ themis = Themis("s-number", "password")
 #### `login()`
 Logs in to Themis. Runs automatically when the class is initialized.
 
-#### `getYear(start, end)`
+#### `get_year(start, end)`
 Returns an instance of a [`Year`](#year)(academic year) between `start` and `end`. 
 
 ```python
-year = themis.getYear(2023, 2024)
+year = themis.get_year(2023, 2024)
 ```
 
-#### `allYears()`
+#### `all_years()`
 Returns a list of `Year` instances corresponding to all years visible to the user.
 
 ```python
-years = themis.allYears()
+years = themis.all_years()
 ```
 <sub> I don't see why you would need this, but it's here. </sub>
 
@@ -35,22 +35,22 @@ years = themis.allYears()
 
 ### Usage
 ```python
-year = themis.getYear(2023, 2024)
+year = themis.get_year(2023, 2024)
 ```
 
 ### Methods
-#### `getCourse(courseName)`
-Returns an instance of a [`Course`](#course) with the name `courseName`.
+#### `get_course(name)`
+Returns an instance of a [`Course`](#course) with the name `name`.
 
 ```python
-pf = year.getCourse("Programming Fundamentals (for CS)")
+pf = year.get_course("Programming Fundamentals (for CS)")
 ```
 
-#### `allCourses()`
+#### `all_courses()`
 Returns a list of `Course` instances corresponding to all courses visible to the user in a given `Year`.
 
 ```python
-courses = year.allCourses()
+courses = year.all_courses()
 ```
 
 ----
@@ -59,13 +59,13 @@ courses = year.allCourses()
 ### Usage
 ```python
 
-pf = year.getCourse("Programming Fundamentals (for CS)")
+pf = year.get_course("Programming Fundamentals (for CS)")
 print(pf.info) # <- course info attribute
-assignments = pf.getGroups()
+assignments = pf.get_groups()
 ```
 
 ### Methods
-#### `getGroups(full=False)`
+#### `get_groups(full=False)`
 Returns a list of `ExerciseGroup` instances corresponding to all exercise groups visible to the user in a given `Course`. Default argument is `full=False`, which will only return the (name, link) of each exercise and folder in the group. If `full=True`, it will traverse the whole course.
 
 You can traverse the course in both cases, although in different ways. 
@@ -73,24 +73,24 @@ You can traverse the course in both cases, although in different ways.
 When you have fully traversed the course, you can access everything via indices and the `exercises` and `folders` attributes of the `ExerciseGroup` instances:
 
 ```python
-  ai_group = ai_course.getGroups(full=True)
+  ai_group = ai_course.get_groups(full=True)
   exercise = ai_group[7].exercises[1] # Week 11 -> Suitcase packing
   exercise.submit("suitcase.py", silent=False)```
 ```
 
-This is equivalent to the case in which we don't traverse the full course using `getGroup` like so:
+This is equivalent to the case in which we don't traverse the full course using `get_group` like so:
 
 ```python
-ai_group = ai_course.getGroup("Week 11")
-exercise = ai_group.getGroup("Suitcase packing")
+ai_group = ai_course.get_group("Week 11")
+exercise = ai_group.get_group("Suitcase packing")
 exercise.submit("suitcase.py", silent=False)
 ```
 
-### `getGroup(name, full=False)`
+### `get_group(name, full=False)`
 Returns an instance of an `ExerciseGroup` with the name `name`. Default argument is `full=False`, which will only return the (name, link) of each exercise and folder in the group. If `full=True`, it will traverse the whole group.
 
 ```python
-week1 = pf.getGroup("Week 1")
+week1 = pf.get_group("Week 1")
 ```
 
 ## `ExerciseGroup`
@@ -98,9 +98,9 @@ Setting the `full` flag to `True` will traverse the whole course.
 
 You can traverse the course in both cases
 * Both folders and exercises are represented as `ExerciseGroup` instances.
-* Folders will have the `amExercise` attribute set to `False`.
-* Folders can have the `downloadFiles` method called on them.
-* Exercises can have the `submit`, `downloadFiles` and `downloadTCs` method called on them.
+* Folders will have the `am_exercise` attribute set to `False`.
+* Folders can have the `download_files` method called on them.
+* Exercises can have the `submit`, `download_files` and `download_tcs` method called on them.
 
 
 ### Example of folder traversal
@@ -119,45 +119,45 @@ Let's say we have a folder structure like this:
 And we want to get to `Part 2` of `Week 1`'s `Exercise 2`. We would do this:
 
 ```python
-pf = year.getCourse("Programming Fundamentals (for CS)")
-assignments = pf.getExerciseGroups()
+pf = year.get_course("Programming Fundamentals (for CS)")
+assignments = pf.get_groups()
 week1 = assignments[0] # Week 1
 exercise2 = week1.folders[1] # Exercise 2
 part2 = exercise2.exercises[1] # Part 2
 
 # Or, if you dont want to traverse the whole course:
-week1 = pf.getGroup("Week 1")
-exercise2 = week1.getGroup("Exercise 2")
-part2 = exercise2.getGroup("Part 2")
+week1 = pf.get_group("Week 1")
+exercise2 = week1.get_group("Exercise 2")
+part2 = exercise2.get_group("Part 2")
 ```
 
 
 ### Methods
-#### `downloadFiles(path=".")`
+#### `download_files(path=".")`
 Downloads all files in the exercise group to a directory `path`. Defaults to the current directory.
 
 ```python
-  assignment.downloadFiles()
+  assignment.download_files()
 ```
 
-#### `downloadTCs(path=".")`
+#### `download_tcs(path=".")`
 Downloads all test cases in the exercise group to a directory `path`. Defaults to the current directory.
 
 ```python
-  assignment.downloadTCs()
+  assignment.download_tcs()
 ```
 
-#### getGroup(name, full=False)
+#### get_group(name, full=False)
 This is used when you want to traverse the course dynamically(not recurse through the whole thing). Of course, you can use it even if you've traversed the whole course, but that would overcomplicate things.
 
 ```python
   # Week 1 -> Exercise 2 -> Part 2
-  week1 = pf.getGroups("Week 1")
-  exercise2 = week1.getGroup("Exercise 2")
-  part2 = exercise2.getGroup("Part 2")
+  week1 = pf.get_groups("Week 1")
+  exercise2 = week1.get_group("Exercise 2")
+  part2 = exercise2.get_group("Part 2")
 
   # This is equivalent to(but faster than):
-  week1 = pf.getGroups("Week 1", full=True)
+  week1 = pf.get_groups("Week 1", full=True)
   exercise2 = week1[1]
   part2 = exercise2[1]
 ```
@@ -167,8 +167,12 @@ This is used when you want to traverse the course dynamically(not recurse throug
 Submits the files to the exercise group. Default arguments are `judge=True`, `wait=True` and `silent=True`. `judge` will judge the submission instantly, and `wait` will wait for the submission to finish. Turning off `silent` will print the submission status dynamically.
 
 ```python
+  suitcase = ai.get_group("Week 11")
   suitcase[7].exercises[1].submit("suitcase.py", silent=False)
-
+  
+  # Or
+  ai.get_group("Week 11").get_group("Suitcase packing").submit("suitcase.py", silent=False)
+  
   >>> 1: ✅
   >>> 2: ✅
   >>> 3: ✅
@@ -179,6 +183,7 @@ Submits the files to the exercise group. Default arguments are `judge=True`, `wa
   >>> 8: ✅
   >>> 9: ✅
   >>> 10: ✅
+  
 ```
 
 
