@@ -1,6 +1,8 @@
 # Config - Testing
 config.py
 tests/
+pathfinding/
+test.py
 
 #Doc env
 .docs_env
