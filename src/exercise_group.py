@@ -8,23 +8,29 @@ from json import loads
 from time import sleep
 from bs4 import BeautifulSoup
 from exceptions.illegal_action import IllegalAction
-
+from submission import Submission
 
 class ExerciseGroup:
     """
-    am_exercise: returns bool which tells you if the instance is an exercise
-    submit: submit to an exercise
-    get_group: get a group by name
-    get_groups: get all groups
-    folders: folders in the folder
-    exercises: exercises in the folder
-    test_cases: test cases in the exercise(if it is an exercise)
-    download_tcs: download test cases
-    files: files in the exercise/folder
-    download_files: download files
+    Methods:
+    `submit`: submit to an exercise
+    `get_group`: get a group by name
+    `download_tcs`: download test cases
+    `download_files`: download files
+    
+    `find_status`: get status for an exercise by name
+    `get_all_statuses`: get all available statuses(useful for multiple exercises)
+    `get_status(idx=0)`: get the available statuses for the exercise. Set the idx if you want to get a specific submission.
+    Attributes:
+    
+    `am_exercise`: returns bool which tells you if the instance is an exercise
+    `folders`: folders in the folder
+    `exercises`: exercises in the folder
+    `test_cases`: test cases in the exercise(if it is an exercise)
+    `files`: files in the exercise/folder
     """
 
-    def __init__(self, url: str, soup, session, full: bool):
+    def __init__(self, url: str, soup:BeautifulSoup, session, full: bool):
         self.url = url
         self.name = soup.text
         self.__prev_raw = soup
@@ -144,7 +150,7 @@ class ExerciseGroup:
         ]
 
     # Get by name
-    def get_group(
+    def get_group( # <- 🗿
         self, name: str, full: bool = False, link: str = None
     ) -> "ExerciseGroup":
         """
@@ -236,7 +242,6 @@ class ExerciseGroup:
 
         url = "https://themis.housing.rug.nl" + form["action"]
         file_types = loads(form["data-suffixes"])
-
         if isinstance(files, str):
             temp = []
             temp.append(files)
@@ -251,12 +256,12 @@ class ExerciseGroup:
                     found_type = file_types[t]
                     break
             if not found_type:
-                raise IllegalAction(message="Illegal filetype for this assignment.")
+                print("WARNING: File type not recognized")
 
             with open(file, "rb") as f:
                 packaged_files.append((found_type, (file, f.read())))
 
-        data = {"judgenow": "true" if judge else "false", "judgeLanguage": found_type}
+        data = {"judgenow": "true" if judge else "false", "judgeLanguage": found_type if found_type else "none"}
 
         if not silent:
             print(f"Submitting to {self.name}")
@@ -268,3 +273,75 @@ class ExerciseGroup:
             return resp.url if "@submissions" in resp.url else None
 
         return self.__wait_for_result(resp.url, not silent, [])
+    
+    def __status_sections(self) -> list[BeautifulSoup]:
+        r = self.__session.get("https://themis.housing.rug.nl" + self.__raw.find("a", text="Status")["href"])
+        
+        soup = BeautifulSoup(r.text, "html.parser")
+        sections = soup.find_all('section', class_=lambda class_: class_ and 'status' in class_.split())
+        
+        return sections
+
+    def __parse_section(self, section:BeautifulSoup, text) -> dict[str, Submission] | dict[str, str]:
+        # The section has a heading and a body. We only care about the body
+        body = section.find("div", class_="sec-body") # Find the body of the section
+        body = body.find("div", class_="subsec-container") # Find the subsec-container
+        body = body.find("div", class_="cfg-container")
+        
+        # Parse the cfg-container
+        parsed = {}
+        
+        # Submission instances go here
+        submissions = {}
+        
+        cfg_lines = body.find_all("div", class_="cfg-line")
+        for line in cfg_lines:
+            key = line.find("span", class_="cfg-key").text.strip().split("\n")[0].replace(":", "").lower()
+            value = line.find("span", class_="cfg-val").text.strip()
+
+            # If there is a span with class tip in the key, it means that the value is a link to a submission
+            if tip := line.find("span", class_="tip"):
+                value = line.find("a")["href"]
+                if not text:
+                    submissions[key.split("\n")[0].lower().replace(" ", "_")] = Submission(value, self.__session)
+            parsed[key] = value
+        
+        if text:
+            return parsed
+        
+        return (parsed, submissions)
+        
+    # I assume that the user would usually request submissions for an assignment,
+    # so I will add a default parameter to the method.
+    
+    def get_status(self, section:list[BeautifulSoup]=None, text:bool=False) -> dict[str, Submission] | dict[str, str]:
+        """Get the available submissions for the exercise. 
+        Set text to True to get the text representation of the submission."""
+        if not section:
+            section = self.__status_sections() 
+        
+        try:
+            section = section[0] # When looking at a single exercise, there is only one status section
+        except IndexError as exc:
+            raise IllegalAction("Invalid status") from exc
+        
+        return self.__parse_section(section, text)
+    
+    def get_all_statuses(self, text:bool=False) -> list[dict[str, str]] | list[dict[str, Submission]]:
+        """ Parses every visible status section. """
+        
+        # This is useless for singular exercises, but if you want the submissions for multiple exercises, you can use this.
+        statuses = []
+        for section in self.__status_sections():
+            if parse := self.__parse_section(section, text):
+                # Find name of the exercise
+                name = section.find("h3").text.replace("Status: ", "").replace("\n", "").replace("\t", "")
+                statuses.append((name,parse))
+        return statuses
+    
+    def find_status(self, name:str, text:bool=False) -> dict[str, Submission] | dict[str, str] | None:
+        """ Find a status block for an exercise by name. """
+        # Find a section which has h3 with the name
+        for section in self.__status_sections():
+            if section.find("h3").text.replace("Status: ", "").replace("\n", "").replace("\t", "") == name:
+                return self.__parse_section(section, text)

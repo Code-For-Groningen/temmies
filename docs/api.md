@@ -186,5 +186,83 @@ Submits the files to the exercise group. Default arguments are `judge=True`, `wa
   
 ```
 
+#### `get_status(section=None, text=False)`
+Parses the status of the exercise group(from a given section). If `section` is not `None`, it will return the status of the section. Don't set `section` if you don't know what you're doing.
 
+When `text` is set to `True`, it will return the status as a dictionary of strings. Otherwise, it will return a tuple in the form `(dict(str:str), dict(str:Submission))`. Refer to the [Submission](#submission) class for more information.
+
+```python
+    pf = year.get_course("Programming Fundamentals (for CS)")
+    pf_as = pf.get_group("Lab Session 2")
+    
+    # Get exercise
+    exercise = pf_as.get_group("Recurrence")
+    
+    # Get status
+    status = exercise.get_status()
+    print(status)
+
+  >>> (
+  >>> { # Information [0]
+  >>> 'assignment': 'Recurrence'
+  >>> 'group': 'Y.N. Here'
+  >>> 'status': 'passed: Passed all test cases'
+  >>> 'grade': '2.00'
+  >>> 'total': '2'
+  >>> 'output limit': '1'
+  >>> 'passed': '1'
+  >>> 'leading': '/submission/2023-2024/progfun/lab2/recurrence/@submissions/s1234567/s1234567-1'
+  >>> 'best': '/submission/2023-2024/progfun/lab2/recurrence/@submissions/s1234567/s1234567-1'
+  >>> 'latest': '/submission/2023-2024/progfun/lab2/recurrence/@submissions/s1234567/s1234567-1'
+  >>> 'first pass': '/submission/2023-2024/progfun/lab2/recurrence/@submissions/s1234567/s1234567-1'
+  >>> 'last pass': '/submission/2023-2024/progfun/lab2/recurrence/@submissions/s1234567/s1234567-1'
+  >>> 'visible': 'Yes'
+  >>> }
+  >>> { # Submission instances [1]
+  >>> 'leading': <submission.Submission object at 0x774ea7a48cd0>
+  >>> 'best': <submission.Submission object at 0x774ea79af910>
+  >>> 'latest': <submission.Submission object at 0x774eaa7d3c10>
+  >>> 'first_pass': <submission.Submission object at 0x774ea77ee810>
+  >>> 'last_pass': <submission.Submission object at 0x774ea755de10>
+  >>> }
+  >>>)
+
+
+```
+
+#### `get_all_statuses(text=False)
+Does the same as `get_status`, but for all visible status sections.
+
+
+## `Submission`
+### Usage
+```python
+submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"]
+
+```
+
+### Methods
+#### `test_cases()`
+Returns a list of `TestCase` instances corresponding to all test cases in the submission.
+
+```python
+  submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"]
+  submission.test_cases()
+```
+
+#### `info()`
+Returns a dictionary of information about the submission.
+
+```python
+  submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"]
+  submission.info()
+```
+
+#### `files()`
+Returns a list of files in the form `(name, link)`.
+
+```python
+  submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"]
+  submission.files()
+```
 
