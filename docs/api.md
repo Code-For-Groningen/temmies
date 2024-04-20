@@ -237,7 +237,7 @@ Does the same as `get_status`, but for all visible status sections.
 ## `Submission`
 ### Usage
 ```python
-submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"]
+submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"] # Week 1 -> Exercise 1 -> Part 1 -> Leading submission
 
 ```
 
@@ -248,6 +248,8 @@ Returns a list of `TestCase` instances corresponding to all test cases in the su
 ```python
   submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"]
   submission.test_cases()
+  >>> {'1': 'passed', '2': 'passed', '3': 'passed', '4': 'passed', '5': 'passed', '6': 'passed', '7': 'passed', '8': 'passed', '9': 'passed', '10': 'passed'}
+
 ```
 
 #### `info()`
@@ -256,6 +258,20 @@ Returns a dictionary of information about the submission.
 ```python
   submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"]
   submission.info()
+
+  >>> {
+  >>>'assignment': 'Part 1',
+  >>>'group': 'Y.N. Here',
+  >>>'uploaded_by': 'Y.N. Here s1234567',
+  >>>'created_on': 'Wed Sep 13 2023 12:51:37 GMT+02002023-09-13T10:51:37.338Z',
+  >>>'submitted_on': 'Wed Sep 13 2023 12:51:37 GMT+02002023-09-13T10:51:37.344Z',
+  >>>'status': 'passed: Passed all test cases',
+  >>>'files': [('recurrence.c',
+  >>>'/file/2023-2024/progfun/lab2/recurrence/%40submissions/s1234567/s1234567-1/source/recurrence.c'),
+  >>>('compile.log',
+  >>>'/file/2023-2024/progfun/lab2/recurrence/%40submissions/s1234567/s1234567-1/output/compile.log')],
+  >>>'language': 'c'
+  >>> }
 ```
 
 #### `files()`
@@ -264,5 +280,7 @@ Returns a list of files in the form `(name, link)`.
 ```python
   submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"]
   submission.files()
+
+  >>> [('recurrence.c', '/file/2023-2024/progfun/lab2/recurrence/%40submissions/s1234567/s1234567-1/source/recurrence.c'), ('compile.log', '/file/2023-2024/progfun/lab2/recurrence/%40submissions/s1234567/s1234567-1/output/compile.log')]
 ```
 
