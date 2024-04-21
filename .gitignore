@@ -3,6 +3,7 @@ config.py
 tests/
 pathfinding/
 test.py
+setup.py
 
 #Doc env
 .docs_env

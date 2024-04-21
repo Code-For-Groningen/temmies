@@ -5,7 +5,7 @@ Creates the initial connection to Themis.
 
 ### Usage
 ```python
-from temmies.Themis import Themis
+from temmies.themis import Themis
 
 themis = Themis("s-number", "password")
 ```
