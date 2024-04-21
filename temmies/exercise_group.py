@@ -7,8 +7,8 @@ Represents a group of exercises or a single exercise.
 from json import loads
 from time import sleep
 from bs4 import BeautifulSoup
-from exceptions.illegal_action import IllegalAction
-from submission import Submission
+from .exceptions.illegal_action import IllegalAction
+from .submission import Submission
 
 class ExerciseGroup:
     """

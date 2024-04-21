@@ -12,14 +12,14 @@ A python library which interacts with themis. Uses bs4. I'll try to end developm
 * [x] Log in  
 * [x] Submit
 * [x] Bulk download of test cases and files
-* [ ] Submission status
+* [x] Submission status
 
 ## Docs
 [here](http://temmies.rtfd.io/).
 
 ## Possible continuations
-* [ ] Discord bot
-* [ ] CLI program
+* Discord bot
+* CLI program
 
 ## Thanks to
 * [Glitchcat](https://glitchcat.github.io/themis-api/), cool docs bro.

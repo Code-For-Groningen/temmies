@@ -5,8 +5,8 @@ Class which represents an academic year.
 from bs4 import BeautifulSoup
 from requests import Session
 
-from course import Course
-from exceptions.course_unavailable import CourseUnavailable
+from .course import Course
+from .exceptions.course_unavailable import CourseUnavailable
 
 
 # Works

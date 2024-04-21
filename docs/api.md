@@ -58,7 +58,6 @@ courses = year.all_courses()
 ## `Course`
 ### Usage
 ```python
-
 pf = year.get_course("Programming Fundamentals (for CS)")
 print(pf.info) # <- course info attribute
 assignments = pf.get_groups()

@@ -6,8 +6,8 @@ Main class for the Themis API
 import urllib3
 from requests import Session
 from bs4 import BeautifulSoup
-from year import Year
-from exceptions.illegal_action import IllegalAction
+from .year import Year
+from .exceptions.illegal_action import IllegalAction
 
 
 # Disable warnings

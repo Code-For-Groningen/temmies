@@ -4,9 +4,9 @@ Houses the Course class which is used to represent a course in a year.
 
 from bs4 import BeautifulSoup
 from requests import Session
-from exercise_group import ExerciseGroup
-from exceptions.course_unavailable import CourseUnavailable
-from exceptions.illegal_action import IllegalAction
+from .exercise_group import ExerciseGroup
+from .exceptions.course_unavailable import CourseUnavailable
+from .exceptions.illegal_action import IllegalAction
 
 
 class Course:

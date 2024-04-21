@@ -4,7 +4,6 @@ File to define the submission class
 
 from bs4 import BeautifulSoup
 
-
 class Submission:
     """
     Submission class
