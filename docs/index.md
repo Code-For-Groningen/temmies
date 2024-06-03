@@ -30,7 +30,7 @@ year = themis.get_year(2023, 2024)
 course = year.get_course("Programming Fundamentals (for CS)")
 
 # Get an assignment
-assignment = course.get_assignment("Assignment 1")
+assignment = course.get_group("Assignment 1")
 
 # Submit 2 files
 assignment.submit(["among.c", "us.py"])
