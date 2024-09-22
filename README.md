@@ -2,7 +2,7 @@
   <img src="docs/img/rugemmie.gif" />  
 </p>
 <p align="center">
-<a href="https://temmies.readthedocs.io/en/latest/"><img alt="Read the Docs" src="https://img.shields.io/readthedocs/temmies"></a>
+<a href="https://temmies.confest.im"><img alt="Read the Docs" src="https://img.shields.io/readthedocs/temmies"></a>
 <img alt="GitHub" src="https://img.shields.io/github/license/Code-For-Groningen/temmies">
 </p>
 
@@ -15,7 +15,7 @@ A python library which interacts with themis. Uses bs4. I'll try to end developm
 * [x] Submission status
 
 ## Docs
-[here](http://temmies.rtfd.io/).
+[here](http://temmies.confest.im/).
 
 ## Possible continuations
 * Discord bot
