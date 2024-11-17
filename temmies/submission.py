@@ -27,7 +27,7 @@ class Submission:
             return clean
         return clean.replace(" ", "_").replace(":", "").lower()
 
-    def test_cases(self) -> dict[str, str]:
+    def get_test_cases(self) -> dict[str, str]:
         """Get a dict of test cases status"""
         # In the submission page, the test cases are in a div with class "sub-cases subsec round shade"
         # print(self.__raw.prettify())
@@ -52,7 +52,7 @@ class Submission:
 
         return results
 
-    def info(self) -> dict[str, str] | None:
+    def get_info(self) -> dict[str, str] | None:
         """Submission information (in details)"""
         # in div with class subsec round shade where there is an h4 with class info
         # The info is in a div with class "cfg-container"
@@ -76,7 +76,7 @@ class Submission:
                     }
         return None
 
-    def files(self) -> list[str] | None:
+    def get_files(self) -> list[str] | None:
         """Get a list of uploaded files in the format [(name, url)]"""
         if not self.__info:
             self.__info = self.info()
