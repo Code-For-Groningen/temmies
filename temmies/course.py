@@ -1,72 +1,28 @@
-"""
-Houses the Course class which is used to represent a course in a year.
-"""
-
-from bs4 import BeautifulSoup
-from requests import Session
-
+from .group import Group
 from .exercise_group import ExerciseGroup
+from requests import Session
 from .exceptions.course_unavailable import CourseUnavailable
-from .exceptions.illegal_action import IllegalAction
 
-
-class Course:
+class Course(Group):
     """
-    get_groups: Get all groups in a course. Set full to True to get all subgroups.
-    get_group: Get a group by name. Set full to True to get all subgroups.
+    Represents a course in a given academic year.
     """
 
-    def __init__(self, url: str, name: str, session: Session, parent):
-        self.url = url
-        self.name = name
-        self.__session = session
-        self.__parent = parent
-        self.__request = self.__session.get(self.url)
-        self.__raw = BeautifulSoup(self.__request.text, "lxml")
-
-        self.__course_available(self.__session.get(self.url))
+    def __init__(self, url: str, name: str, session, parent):
+        super().__init__(url, name, session, parent=parent, full=False)
+        self.__course_available(self._request)
 
     def __str__(self):
-        return f"Course {self.name} in year {self.__parent.year}"
+        return f"Course {self.name} in year {self._parent.year}"
 
-    def __course_available(self, r):
-        # Check if we got an error
-        # print(self.url)
-        if "Something went wrong" in r.text:
+    def __course_available(self, response):
+        if "Something went wrong" in response.text:
             raise CourseUnavailable(
-                message="'Something went wrong'. Course most likely not found. "
+                message="'Something went wrong'. Course most likely not found."
             )
 
-    def get_groups(self, full: bool = False) -> list[ExerciseGroup]:
+    def create_group(self, url: str, name: str, session: Session, parent, full: bool, classes=None):
         """
-        get_groups(full: bool = False) -> list[ExerciseGroup]
-        Get all groups in a course. Set full to True to get all subgroups.
+        Create an instance of ExerciseGroup for subgroups within a Course.
         """
-        section = self.__raw.find("div", class_="ass-children")
-        entries = section.find_all("a", href=True)
-        return [
-            ExerciseGroup(
-                f"https://themis.housing.rug.nl{x['href']}",
-                x,
-                self.__session,
-                full
-            )
-            for x in entries
-        ]
-
-    # BAD: Repeated code!!!!
-    def get_group(self, name: str, full: bool = False) -> ExerciseGroup:
-        """
-        get_group(name:str, full:bool = False) -> ExerciseGroup
-        Get a single group by name. Set full to True to get all subgroups as well.
-        """
-        group = self.__raw.find("a", text=name)
-        if not group:
-            raise IllegalAction(message=f"No such group found: {name}")
-
-        return ExerciseGroup(
-            f"https://themis.housing.rug.nl{group['href']}",
-            group,
-            self.__session,
-            full
-        )
+        return ExerciseGroup(url, name, session, parent, full, classes)
