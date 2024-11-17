@@ -21,7 +21,7 @@ pip install temmies
 from temmies.themis import Themis
 
 # Log in
-themis = Themis("s-number", "password")
+themis = Themis("s-number") # You will be prompted for your password
 
 # Get a year
 year = themis.get_year(2023, 2024)
