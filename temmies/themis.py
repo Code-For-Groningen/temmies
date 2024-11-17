@@ -4,6 +4,8 @@ Main class for the Themis API
 """
 
 import urllib3
+import keyring
+import getpass
 from requests import Session
 from bs4 import BeautifulSoup
 from .year import Year
@@ -21,10 +23,22 @@ class Themis:
     all_years: Get all years
     """
 
-    def __init__(self, user: str, passwd: str):
-        self.session = self.login(user, passwd)
-        self.years = []
-        self.url = "https://themis.housing.rug.nl/course/"
+    def __init__(self, user: str):
+        self.user = user
+        self.password = self.__get_password()
+        self.session = self.login(user, self.password)
+
+    def __get_password(self) -> str:
+        """
+        Retrieve the password from the keyring, prompting the user if not found.
+        """
+        password = keyring.get_password(f'{self.user}-temmies', self.user)
+        if not password:
+            print(f"Password for user '{self.user}' not found in keyring.")
+            password = getpass.getpass(prompt=f"Enter password for {self.user}: ")
+            keyring.set_password(f'{self.user}-temmies', self.user, password)
+            print("Password saved securely in keyring.")
+        return password
 
     def login(self, user: str, passwd: str) -> Session:
         """
@@ -58,9 +72,13 @@ class Themis:
 
             # check if login was successful
             log_out = "Welcome, logged in as" in r.text
-            if not log_out:
-                raise IllegalAction(message=f"Login for user {user} failed")
-
+            if "Invalid credentials" in r.text:
+                # Prompt for password again
+                print("Invalid credentials. Please try again.")
+                passwd = getpass.getpass(prompt="Enter password: ")
+                keyring.set_password(f'{self.user}-temmies', self.user, passwd)
+                return self.login(user, passwd)
+                
         return s
 
     def get_year(self, start: int, end: int) -> Year:
