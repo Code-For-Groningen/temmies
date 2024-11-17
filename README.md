@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="docs/img/rugemmie.gif" />  
+  <img src="https://github.com/Code-For-Groningen/temmies/blob/v1.1.0/docs/img/rugemmie.gif" />  
 </p>
 <p align="center">
 <a href="https://temmies.confest.im"><img alt="Read the Docs" src="https://img.shields.io/readthedocs/temmies"></a>
 <img alt="GitHub" src="https://img.shields.io/github/license/Code-For-Groningen/temmies">
 </p>
 
-A python library which interacts with themis. Uses bs4. I'll try to end development on a somewhat working state. 
+A python library which interacts with [Themis](https://themis.housing.rug.nl/). Uses bs4. I'll try to end development on a somewhat working state. 
 
 ## Intended Features
 * [x] Log in  
@@ -15,11 +15,11 @@ A python library which interacts with themis. Uses bs4. I'll try to end developm
 * [x] Submission status
 
 ## Docs
-[here](http://temmies.confest.im/).
+- [here](http://temmies.confest.im/).
 
 ## Possible continuations
 * Discord bot
-* CLI program
+* [CLI program](https://github.com/Code-For-Groningen/temmies-cli)
 
 ## Thanks to
 * [Glitchcat](https://glitchcat.github.io/themis-api/), cool docs bro.
