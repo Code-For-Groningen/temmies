@@ -79,6 +79,6 @@ class Submission:
     def get_files(self) -> list[str] | None:
         """Get a list of uploaded files in the format [(name, url)]"""
         if not self.__info:
-            self.__info = self.info()
+            self.__info = self.get_info()
         
         return self.__info.get("files", None)
