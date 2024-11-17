@@ -3,4 +3,5 @@ nav:
   - Temmies: index.md
   - API Reference: api.md
   - About: about.md
+  - Change Log: changelog.md
 theme: readthedocs

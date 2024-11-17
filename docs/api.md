@@ -1,5 +1,6 @@
 # Classes
 ---
+
 ## `Themis`
 Creates the initial connection to Themis.
 
@@ -15,7 +16,7 @@ themis = Themis("s-number", "password")
 Logs in to Themis. Runs automatically when the class is initialized.
 
 #### `get_year(start, end)`
-Returns an instance of a [`Year`](#year)(academic year) between `start` and `end`. 
+Returns an instance of a [`Year`](#year) (academic year) between `start` and `end`.
 
 ```python
 year = themis.get_year(2023, 2024)
@@ -28,7 +29,6 @@ Returns a list of `Year` instances corresponding to all years visible to the use
 years = themis.all_years()
 ```
 <sub> I don't see why you would need this, but it's here. </sub>
-
 ----
 
 ## `Year`
@@ -59,48 +59,47 @@ courses = year.all_courses()
 ### Usage
 ```python
 pf = year.get_course("Programming Fundamentals (for CS)")
-print(pf.info) # <- course info attribute
 assignments = pf.get_groups()
 ```
 
 ### Methods
 #### `get_groups(full=False)`
-Returns a list of `ExerciseGroup` instances corresponding to all exercise groups visible to the user in a given `Course`. Default argument is `full=False`, which will only return the (name, link) of each exercise and folder in the group. If `full=True`, it will traverse the whole course.
+Returns a list of `ExerciseGroup` instances corresponding to all exercise groups visible to the user in a given `Course`. The default argument is `full=False`, which will only return the top-level (name, link) of each exercise and folder in the group. If `full=True`, it will traverse the whole course.
 
-You can traverse the course in both cases, although in different ways. 
+You can traverse the course in both cases, although in different ways.
 
 When you have fully traversed the course, you can access everything via indices and the `exercises` and `folders` attributes of the `ExerciseGroup` instances:
 
 ```python
-  ai_group = ai_course.get_groups(full=True)
-  exercise = ai_group[7].exercises[1] # Week 11 -> Suitcase packing
-  exercise.submit("suitcase.py", silent=False)```
+ai_group = ai_course.get_groups(full=True)
+exercise = ai_group[7].exercises[1]  # Week 11 -> Suitcase packing
+exercise.submit(["suitcase.py"], silent=False)
 ```
 
-This is equivalent to the case in which we don't traverse the full course using `get_group` like so:
+This is equivalent to the case in which we don't traverse the whole course using `get_group` like so:
 
 ```python
 ai_group = ai_course.get_group("Week 11")
 exercise = ai_group.get_group("Suitcase packing")
-exercise.submit("suitcase.py", silent=False)
+exercise.submit(["suitcase.py"], silent=False)
 ```
 
-### `get_group(name, full=False)`
-Returns an instance of an `ExerciseGroup` with the name `name`. Default argument is `full=False`, which will only return the (name, link) of each exercise and folder in the group. If `full=True`, it will traverse the whole group.
+#### `get_group(name, full=False)`
+Returns an instance of an `ExerciseGroup` with the name `name`. The default argument is `full=False`, which will only return the (name, link) of each exercise and folder in the group. If `full=True`, it will traverse the whole group.
 
 ```python
 week1 = pf.get_group("Week 1")
 ```
 
+----
+
 ## `ExerciseGroup`
-Setting the `full` flag to `True` will traverse the whole course. 
+Setting the `full` flag to `True` will traverse the whole group.
 
-You can traverse the course in both cases
-* Both folders and exercises are represented as `ExerciseGroup` instances.
-* Folders will have the `am_exercise` attribute set to `False`.
-* Folders can have the `download_files` method called on them.
-* Exercises can have the `submit`, `download_files` and `download_tcs` method called on them.
-
+- Both folders and exercises are represented as `ExerciseGroup` instances.
+- Folders will have the `am_exercise` attribute set to `False`.
+- Folders can have the `download_files` method called on them.
+- Exercises can have the `submit`, `download_files`, and `download_tcs` methods called on them.
 
 ### Example of folder traversal
 Let's say we have a folder structure like this:
@@ -120,166 +119,153 @@ And we want to get to `Part 2` of `Week 1`'s `Exercise 2`. We would do this:
 ```python
 pf = year.get_course("Programming Fundamentals (for CS)")
 assignments = pf.get_groups()
-week1 = assignments[0] # Week 1
-exercise2 = week1.folders[1] # Exercise 2
-part2 = exercise2.exercises[1] # Part 2
+week1 = assignments[0]  # Week 1
+exercise2 = week1.folders[1]  # Exercise 2
+part2 = exercise2.exercises[1]  # Part 2
 
-# Or, if you dont want to traverse the whole course:
+# Or, if you don't want to traverse the whole course:
 week1 = pf.get_group("Week 1")
 exercise2 = week1.get_group("Exercise 2")
 part2 = exercise2.get_group("Part 2")
 ```
-
 
 ### Methods
 #### `download_files(path=".")`
 Downloads all files in the exercise group to a directory `path`. Defaults to the current directory.
 
 ```python
-  assignment.download_files()
+assignment.download_files()
 ```
 
 #### `download_tcs(path=".")`
 Downloads all test cases in the exercise group to a directory `path`. Defaults to the current directory.
 
 ```python
-  assignment.download_tcs()
+assignment.download_tcs()
 ```
 
-#### get_group(name, full=False)
-This is used when you want to traverse the course dynamically(not recurse through the whole thing). Of course, you can use it even if you've traversed the whole course, but that would overcomplicate things.
+#### `get_group(name, full=False)`
+This is used when you want to traverse the course dynamically (not recurse through the whole thing). You can use it even if you've traversed the whole course.
 
 ```python
-  # Week 1 -> Exercise 2 -> Part 2
-  week1 = pf.get_groups("Week 1")
-  exercise2 = week1.get_group("Exercise 2")
-  part2 = exercise2.get_group("Part 2")
+# Week 1 -> Exercise 2 -> Part 2
+week1 = pf.get_group("Week 1")
+exercise2 = week1.get_group("Exercise 2")
+part2 = exercise2.get_group("Part 2")
 
-  # This is equivalent to(but faster than):
-  week1 = pf.get_groups("Week 1", full=True)
-  exercise2 = week1[1]
-  part2 = exercise2[1]
+# This is equivalent to (but faster than):
+week1 = pf.get_groups(full=True)[0]
+exercise2 = week1.folders[1]
+part2 = exercise2.exercises[1]
 ```
 
-
-#### `submit(files)`
-Submits the files to the exercise group. Default arguments are `judge=True`, `wait=True` and `silent=True`. `judge` will judge the submission instantly, and `wait` will wait for the submission to finish. Turning off `silent` will print the submission status dynamically.
+#### `submit(files, judge=True, wait=True, silent=True)`
+Submits the files to the exercise. The default arguments are `judge=True`, `wait=True`, and `silent=True`. Setting `judge=False` will not judge the submission immediately. Setting `wait=False` will not wait for the submission to finish. Turning off `silent` will print the submission status dynamically.
 
 ```python
-  suitcase = ai.get_group("Week 11")
-  suitcase[7].exercises[1].submit("suitcase.py", silent=False)
-  
-  # Or
-  ai.get_group("Week 11").get_group("Suitcase packing").submit("suitcase.py", silent=False)
-  
-  >>> 1: ✅
-  >>> 2: ✅
-  >>> 3: ✅
-  >>> 4: ✅
-  >>> 5: ✅
-  >>> 6: ✅
-  >>> 7: ✅
-  >>> 8: ✅
-  >>> 9: ✅
-  >>> 10: ✅
-  
+suitcase = ai_course.get_group("Week 11").get_group("Suitcase packing")
+suitcase.submit(["suitcase.py"], silent=False)
+
+# Output:
+# Submitting to Suitcase packing
+# • suitcase.py
+# 1: ✅
+# 2: ✅
+# 3: ✅
+# ...
 ```
 
-#### `get_status(section=None, text=False)`
-Parses the status of the exercise group(from a given section). If `section` is not `None`, it will return the status of the section. Don't set `section` if you don't know what you're doing.
-
-When `text` is set to `True`, it will return the status as a dictionary of strings. Otherwise, it will return a tuple in the form `(dict(str:str), dict(str:Submission))`. Refer to the [Submission](#submission) class for more information.
+#### `get_status(text=False)`
+Retrieves the status of the exercise group. When `text` is set to `True`, it will return the status as a dictionary of strings. Otherwise, it will return a dictionary where keys map to either strings or `Submission` objects. Common keys include `'leading'`, `'best'`, `'latest'`, etc.
 
 ```python
-    pf = year.get_course("Programming Fundamentals (for CS)")
-    pf_as = pf.get_group("Lab Session 2")
-    
-    # Get exercise
-    exercise = pf_as.get_group("Recurrence")
-    
-    # Get status
-    status = exercise.get_status()
-    print(status)
+pf = year.get_course("Programming Fundamentals (for CS)")
+exercise = pf.get_group("Lab Session 2").get_group("Recurrence")
 
-  >>> (
-  >>> { # Information [0]
-  >>> 'assignment': 'Recurrence'
-  >>> 'group': 'Y.N. Here'
-  >>> 'status': 'passed: Passed all test cases'
-  >>> 'grade': '2.00'
-  >>> 'total': '2'
-  >>> 'output limit': '1'
-  >>> 'passed': '1'
-  >>> 'leading': '/submission/2023-2024/progfun/lab2/recurrence/@submissions/s1234567/s1234567-1'
-  >>> 'best': '/submission/2023-2024/progfun/lab2/recurrence/@submissions/s1234567/s1234567-1'
-  >>> 'latest': '/submission/2023-2024/progfun/lab2/recurrence/@submissions/s1234567/s1234567-1'
-  >>> 'first pass': '/submission/2023-2024/progfun/lab2/recurrence/@submissions/s1234567/s1234567-1'
-  >>> 'last pass': '/submission/2023-2024/progfun/lab2/recurrence/@submissions/s1234567/s1234567-1'
-  >>> 'visible': 'Yes'
-  >>> }
-  >>> { # Submission instances [1]
-  >>> 'leading': <submission.Submission object at 0x774ea7a48cd0>
-  >>> 'best': <submission.Submission object at 0x774ea79af910>
-  >>> 'latest': <submission.Submission object at 0x774eaa7d3c10>
-  >>> 'first_pass': <submission.Submission object at 0x774ea77ee810>
-  >>> 'last_pass': <submission.Submission object at 0x774ea755de10>
-  >>> }
-  >>>)
+# Get status
+status = exercise.get_status()
+print(status)
 
-
+# Output:
+{
+  'assignment': 'Recurrence',
+  'group': 'Y.N. Here',
+  'status': 'passed: Passed all test cases',
+  'grade': '2.00',
+  'total': '2',
+  'output limit': '1',
+  'passed': '1',
+  'leading': <temmies.submission.Submission object at 0x...>,
+  'best': <temmies.submission.Submission object at 0x...>,
+  'latest': <temmies.submission.Submission object at 0x...>,
+  'first_pass': <temmies.submission.Submission object at 0x...>,
+  'last_pass': <temmies.submission.Submission object at 0x...>,
+  'visible': 'Yes'
+}
 ```
 
-#### `get_all_statuses(text=False)
-Does the same as `get_status`, but for all visible status sections.
+To access submission details:
 
+```python
+leading_submission = status["leading"]
+print(leading_submission.get_files())
+```
+
+----
 
 ## `Submission`
 ### Usage
 ```python
-submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"] # Week 1 -> Exercise 1 -> Part 1 -> Leading submission
-
+submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()["leading"]
 ```
 
 ### Methods
-#### `test_cases()`
-Returns a list of `TestCase` instances corresponding to all test cases in the submission.
+#### `get_test_cases()`
+Returns a dictionary of test cases and their statuses.
 
 ```python
-  submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"]
-  submission.test_cases()
-  >>> {'1': 'passed', '2': 'passed', '3': 'passed', '4': 'passed', '5': 'passed', '6': 'passed', '7': 'passed', '8': 'passed', '9': 'passed', '10': 'passed'}
+test_cases = submission.get_test_cases()
+print(test_cases)
 
+# Output:
+{'1': 'passed', '2': 'passed', '3': 'passed', '4': 'passed', '5': 'passed', '6': 'passed', '7': 'passed', '8': 'passed', '9': 'passed', '10': 'passed'}
 ```
 
-#### `info()`
+#### `get_info()`
 Returns a dictionary of information about the submission.
 
 ```python
-  submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"]
-  submission.info()
+info = submission.get_info()
+print(info)
 
-  >>> {
-  >>>'assignment': 'Part 1',
-  >>>'group': 'Y.N. Here',
-  >>>'uploaded_by': 'Y.N. Here s1234567',
-  >>>'created_on': 'Wed Sep 13 2023 12:51:37 GMT+02002023-09-13T10:51:37.338Z',
-  >>>'submitted_on': 'Wed Sep 13 2023 12:51:37 GMT+02002023-09-13T10:51:37.344Z',
-  >>>'status': 'passed: Passed all test cases',
-  >>>'files': [('recurrence.c',
-  >>>'/file/2023-2024/progfun/lab2/recurrence/%40submissions/s1234567/s1234567-1/source/recurrence.c'),
-  >>>('compile.log',
-  >>>'/file/2023-2024/progfun/lab2/recurrence/%40submissions/s1234567/s1234567-1/output/compile.log')],
-  >>>'language': 'c'
-  >>> }
+# Output:
+{
+  'assignment': 'Part 1',
+  'group': 'Y.N. Here',
+  'uploaded_by': 'Y.N. Here s1234567',
+  'created_on': 'Wed Sep 13 2023 12:51:37 GMT+0200',
+  'submitted_on': 'Wed Sep 13 2023 12:51:37 GMT+0200',
+  'status': 'passed: Passed all test cases',
+  'files': [
+    ('recurrence.c', '/file/.../recurrence.c'),
+    ('compile.log', '/file/.../compile.log')
+  ],
+  'language': 'c'
+}
 ```
 
-#### `files()`
-Returns a list of files in the form `(name, link)`.
+#### `get_files()`
+Returns a list of uploaded files in the format `(name, URL)`.
 
 ```python
-  submission = pf.get_group("Week 1").get_group("Exercise 1").get_group("Part 1").get_status()[1]["leading"]
-  submission.files()
+files = submission.get_files()
+print(files)
 
-  >>> [('recurrence.c', '/file/2023-2024/progfun/lab2/recurrence/%40submissions/s1234567/s1234567-1/source/recurrence.c'), ('compile.log', '/file/2023-2024/progfun/lab2/recurrence/%40submissions/s1234567/s1234567-1/output/compile.log')]
+# Output:
+[
+  ('recurrence.c', '/file/.../recurrence.c'),
+  ('compile.log', '/file/.../compile.log')
+]
 ```
 
+----
