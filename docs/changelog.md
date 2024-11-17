@@ -11,4 +11,4 @@
 #### **Codebase**
 - Prepended `get_` to all methods in `Submission`
 - Created base `Group` from which `Course` and `ExerciseGroup` inherit.
-- 
+- Using system keyring to store passwords (Issue #11)

@@ -8,8 +8,10 @@ Creates the initial connection to Themis.
 ```python
 from temmies.themis import Themis
 
-themis = Themis("s-number", "password")
+themis = Themis("s-number")
 ```
+
+On the first run, you will be prompted for your password. Then, on the next run(s), you will be able to log in automatically, as the password is stored in the system keyring. If you want to delete it [click here](https://www.google.com/search?hl=en&q=delete%20a%20password%20from%20keyring).
 
 ### Methods
 #### `login()`
