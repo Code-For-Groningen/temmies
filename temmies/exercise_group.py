@@ -15,13 +15,13 @@ class ExerciseGroup(Group):
         super().__init__(url, name, session, parent=parent, full=full, classes=classes)
         self.am_exercise = "ass-submitable" in self.classes
 
-    def create_group(self, url: str, name: str, session, parent, full: bool, classes=None) -> ExerciseGroup:
+    def create_group(self, url: str, name: str, session, parent, full: bool, classes=None):
         """
         Create an instance of ExerciseGroup for subgroups.
         """
         return ExerciseGroup(url, name, session, parent, full, classes)
 
-    def create_group_from_url(self, url: str, full: bool) -> ExerciseGroup:
+    def create_group_from_url(self, url: str, full: bool):
         """
         Create an instance of ExerciseGroup from a full URL of a Themis group.
         This method will retrieve the name of the group from the URL.
