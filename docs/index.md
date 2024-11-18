@@ -24,7 +24,7 @@ from temmies.themis import Themis
 themis = Themis("s-number") # You will be prompted for your password
 
 # Get a year
-year = themis.get_year(2023, 2024)
+year = themis.get_year("2023-2024")
 
 # Get a course
 course = year.get_course("Programming Fundamentals (for CS)")
