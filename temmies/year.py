@@ -50,3 +50,22 @@ class Year:
         suffix = course_link["href"].replace(f"course/{self.start}-{self.year}", "")
         course_url = self.url + suffix
         return Course(course_url, name, self._session, self)
+
+    def get_course_by_url(self, url: str) -> Course:
+        """
+        Gets a course by url.
+        """
+        r = self._session.get(url)
+        soup = BeautifulSoup(r.text, "lxml")
+        # <a class="fill accent large" href="https://themis.housing.rug.nl/course/2023-2024/adinc-cs">Algorithms and Data Structures for CS</a>
+        course_link = soup.find_all("a", class_="fill accent large")
+        name = None
+        for link in course_link:
+            if url in link["href"]:
+                name = link.text
+                break
+        
+        if not name:
+            raise CourseUnavailable(f"No such course found: {url}")
+        return Course(url, name, self._session, self)
+        

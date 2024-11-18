@@ -15,12 +15,35 @@ class ExerciseGroup(Group):
         super().__init__(url, name, session, parent=parent, full=full, classes=classes)
         self.am_exercise = "ass-submitable" in self.classes
 
-    def create_group(self, url: str, name: str, session, parent, full: bool, classes=None):
+    def create_group(self, url: str, name: str, session, parent, full: bool, classes=None) -> ExerciseGroup:
         """
         Create an instance of ExerciseGroup for subgroups.
         """
         return ExerciseGroup(url, name, session, parent, full, classes)
 
+    def create_group_from_url(self, url: str, full: bool) -> ExerciseGroup:
+        """
+        Create an instance of ExerciseGroup from a full URL of a Themis group.
+        This method will retrieve the name of the group from the URL.
+
+        Args:
+            url (str): URL of the Themis group.
+            full (bool): Whether to traverse the whole group.
+
+        Returns:
+            ExerciseGroup: An instance of ExerciseGroup.
+        """
+        if "https://themis.housing.rug.nl/course/" not in url:
+            url = "https://themis.housing.rug.nl/course/" + url
+        
+        # Find name of group (last of a with class fill accent large)
+        r = self._session.get(url)
+        soup = BeautifulSoup(r.text, "lxml")
+        group_links = soup.find_all("a", class_="fill accent large")
+        name = group_links[-1].text
+        
+        return self.create_group(url, name, self._session, self, full)
+        
     @property
     def test_cases(self) -> list[str]:
         """
