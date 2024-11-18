@@ -1,28 +1,35 @@
 from .group import Group
-from .exercise_group import ExerciseGroup
-from requests import Session
-from .exceptions.course_unavailable import CourseUnavailable
+
 
 class Course(Group):
     """
-    Represents a course in a given academic year.
+    Represents a course.
     """
 
-    def __init__(self, url: str, name: str, session, parent):
-        super().__init__(url, name, session, parent=parent, full=False)
-        self.__course_available(self._request)
+    def __init__(self, session, course_path: str, title: str, parent):
+        super().__init__(session, course_path, title, parent)
+        self.course_path = course_path  # e.g., '/2023-2024/adinc-ai'
 
     def __str__(self):
-        return f"Course {self.name} in year {self._parent.year}"
+        return f"Course({self.title})"
 
-    def __course_available(self, response):
-        if "Something went wrong" in response.text:
-            raise CourseUnavailable(
-                message="'Something went wrong'. Course most likely not found."
+    def create_group(self, item_data):
+        """
+        Create a subgroup (Group or ExerciseGroup) based on item data.
+        """
+        if item_data.get("submitable", False):
+            return ExerciseGroup(
+                self.session,
+                item_data["path"],
+                item_data["title"],
+                self,
+                item_data.get("submitable", False),
             )
-
-    def create_group(self, url: str, name: str, session: Session, parent, full: bool, classes=None):
-        """
-        Create an instance of ExerciseGroup for subgroups within a Course.
-        """
-        return ExerciseGroup(url, name, session, parent, full, classes)
+        else:
+            return Group(
+                self.session,
+                item_data["path"],
+                item_data["title"],
+                self,
+                item_data.get("submitable", False),
+            )
