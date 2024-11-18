@@ -1,9 +1,7 @@
 """
-Main class for the Themis API
-
+Main class for the Themis API using the new JSON endpoints.
 """
 
-import urllib3
 import keyring
 import getpass
 from requests import Session
@@ -11,41 +9,49 @@ from bs4 import BeautifulSoup
 from .year import Year
 from .exceptions.illegal_action import IllegalAction
 
-
-# Disable warnings
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-
 class Themis:
     """
-    login: Login to Themis
-    get_year: Get a year object
-    all_years: Get all years
+    Main class for interacting with Themis.
+    - login: Login to Themis
+    - get_year: Get a year object
+    - all_years: Get all years
     """
 
     def __init__(self, user: str):
+        """
+        Initialize Themis object, logging in with the given user.
+
+        Args:
+            user (str): Username to login with.
+
+        Attributes:
+            user (str): Username.
+            password (str): Password, retrieved from keyring.
+            base_url (str): Base URL of the Themis website.
+            session (requests.Session): Authenticated session.
+        """
         self.user = user
         self.password = self.__get_password()
-        self.session = self.login(user, self.password)
-
+        self.base_url = "https://themis.housing.rug.nl"
+        self.session = self.login(self.user, self.password)
     def __get_password(self) -> str:
         """
         Retrieve the password from the keyring, prompting the user if not found.
         """
-        password = keyring.get_password(f'{self.user}-temmies', self.user)
+        password = keyring.get_password(f"{self.user}-temmies", self.user)
         if not password:
             print(f"Password for user '{self.user}' not found in keyring.")
             password = getpass.getpass(prompt=f"Enter password for {self.user}: ")
-            keyring.set_password(f'{self.user}-temmies', self.user, password)
+            keyring.set_password(f"{self.user}-temmies", self.user, password)
             print("Password saved securely in keyring.")
         return password
 
     def login(self, user: str, passwd: str) -> Session:
         """
-        login(self, user: str, passwd: str) -> Session
-        Login to Themis
-        Set user to your student number and passwd to your password
+        Login to Themis using the original method, parsing CSRF token from the login page.
         """
+        session = Session()
+        login_url = f"{self.base_url}/log/in"
 
         user_agent = (
             "Mozilla/5.0 (X11; Linux x86_64) "
@@ -57,52 +63,52 @@ class Themis:
 
         data = {"user": user, "password": passwd, "null": None}
 
-        with Session() as s:
-            url = "https://themis.housing.rug.nl/log/in"
-            r = s.get(url, headers=headers, verify=False)
-            soup = BeautifulSoup(r.text, "lxml")
+        # Get login page to retrieve CSRF token
+        response = session.get(login_url, headers=headers, verify=False)
+        if response.status_code != 200:
+            raise ConnectionError("Failed to connect to Themis login page.")
 
-            # get the csrf token and add it to payload
-            csrf_token = soup.find("input", attrs={"name": "_csrf"})["value"]
-            data["_csrf"] = csrf_token
-            data["sudo"] = user.lower()
+        # Parse CSRF token from login page
+        soup = BeautifulSoup(response.text, "lxml")
+        csrf_input = soup.find("input", attrs={"name": "_csrf"})
+        if not csrf_input or not csrf_input.get("value"):
+            raise ValueError("Unable to retrieve CSRF token.")
+        csrf_token = csrf_input["value"]
+        data["_csrf"] = csrf_token
+        data["sudo"] = user.lower()
 
-            # Login
-            r = s.post(url, data=data, headers=headers)
+        # Attempt login
+        response = session.post(login_url, data=data, headers=headers)
+        if "Invalid credentials" in response.text:
+            # Prompt for password again
+            print("Invalid credentials. Please try again.")
+            passwd = getpass.getpass(prompt="Enter password: ")
+            keyring.set_password(f'{self.user}-temmies', self.user, passwd)
+            return self.login(user, passwd)
+        elif "Welcome, logged in as" not in response.text:
+            raise ValueError("Login failed for an unknown reason.")
 
-            # check if login was successful
-            log_out = "Welcome, logged in as" in r.text
-            if "Invalid credentials" in r.text:
-                # Prompt for password again
-                print("Invalid credentials. Please try again.")
-                passwd = getpass.getpass(prompt="Enter password: ")
-                keyring.set_password(f'{self.user}-temmies', self.user, passwd)
-                return self.login(user, passwd)
-                
-        return s
+        return session
 
-    def get_year(self, start: int, end: int) -> Year:
+    def get_year(self, year_path: str) -> Year:
         """
-        get_year(self, start: int, end: int) -> Year
-        Gets a year object
-        Set start to the start year and end to the end year (e.g. 2023-2024)
+        Gets a Year object using the year path (e.g., '2023-2024').
         """
-        return Year(self.session, start, end)
+        return Year(self.session, year_path)
 
-    def all_years(self) -> list[Year]:
+    def all_years(self) -> list:
         """
-        get_years(self, start: int, end: int) -> list[Year]
-        Gets all visible years
+        Gets all visible years as Year objects.
         """
-        # All of them are in a big ul at the beginning of the page
-        r = self.session.get(self.url)
-        soup = BeautifulSoup(r.text, "lxml")
-        ul = soup.find("ul", class_="round")
-        lis = ul.find_all("li", class_="large")
+        navigation_url = f"{self.base_url}/api/navigation/"
+        response = self.session.get(navigation_url)
+        if response.status_code != 200:
+            raise ConnectionError("Failed to retrieve years from Themis API.")
+
+        years_data = response.json()
         years = []
-        for li in lis:
-            # format: 2019-2020
-            year = li.a.text.split("-")
-            years.append(Year(self.session, int(year[0]), int(year[1])))
-
-        return years  # Return a list of year objects
+        for year_info in years_data:
+            if year_info.get("visible", False):
+                year_path = year_info["path"].strip("/")
+                years.append(Year(self.session, year_path))
+        return years
