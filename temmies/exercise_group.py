@@ -6,6 +6,7 @@ from time import sleep
 from typing import Optional
 from bs4 import BeautifulSoup
 
+
 class ExerciseGroup(Group):
     """
     Represents a group of exercises or a single exercise.
@@ -21,7 +22,8 @@ class ExerciseGroup(Group):
         """
         return ExerciseGroup(url, name, session, parent, full, classes)
 
-    def create_group_from_url(self, url: str, full: bool):
+    @classmethod
+    def create_group_from_url(cls, url: str, full: bool) -> 'ExerciseGroup':
         """
         Create an instance of ExerciseGroup from a full URL of a Themis group.
         This method will retrieve the name of the group from the URL.
@@ -35,15 +37,15 @@ class ExerciseGroup(Group):
         """
         if "https://themis.housing.rug.nl/course/" not in url:
             url = "https://themis.housing.rug.nl/course/" + url
-        
+
         # Find name of group (last of a with class fill accent large)
-        r = self._session.get(url)
+        r = cls._session.get(url)
         soup = BeautifulSoup(r.text, "lxml")
         group_links = soup.find_all("a", class_="fill accent large")
         name = group_links[-1].text
-        
-        return self.create_group(url, name, self._session, self, full)
-        
+
+        return cls(url, name, cls._session, parent=None, full=full)
+
     @property
     def test_cases(self) -> list[str]:
         """
@@ -67,7 +69,8 @@ class ExerciseGroup(Group):
         Download all test cases for this exercise.
         """
         if not self.am_exercise:
-            raise IllegalAction("You are downloading test cases from a folder.")
+            raise IllegalAction(
+                "You are downloading test cases from a folder.")
 
         for tc in self.test_cases:
             url = f"https://themis.housing.rug.nl{tc['href']}"
@@ -81,7 +84,8 @@ class ExerciseGroup(Group):
         """
         Get all downloadable files for this exercise or group.
         """
-        details = self._raw.find("div", id=lambda x: x and x.startswith("details"))
+        details = self._raw.find(
+            "div", id=lambda x: x and x.startswith("details"))
         if not details:
             return []
 
