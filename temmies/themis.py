@@ -90,10 +90,12 @@ class Themis:
 
         return session
 
-    def get_year(self, year_path: str) -> Year:
+    def get_year(self, start_year: int = None, end_year: int = None) -> Year:
         """
-        Gets a Year object using the year path (e.g., '2023-2024').
+        Gets a Year object using the year path (e.g., 2023, 2024).
         """
+        year_path = f"{start_year}-{end_year}"
+        
         return Year(self.session, year_path)
 
     def all_years(self) -> list:
