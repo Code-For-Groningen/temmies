@@ -1,5 +1,5 @@
 # Temmies!
-<center>![Temmie](img/rugemmie.gif)</center>
+<center>![Temmie](img/temmie.png)</center>
 
 
 ## What is this?
