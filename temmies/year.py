@@ -53,11 +53,9 @@ class Year:
 
         soup = BeautifulSoup(response.text, "lxml")
 
-        title_element = soup.find("h1")
-        if not title_element:
-            title_elements = soup.find_all("a", class_="fill accent large")
-            if title_elements:
-                title_element = title_elements[-1]
+        title_elements = soup.find_all("a", class_="fill accent large")
+        if title_elements:
+            title_element = title_elements[-1]
 
         if title_element:
             course_title = title_element.get_text(strip=True)
