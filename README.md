@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/img/temmie.png" width= 200px/>  
+  <img src="https://github.com/Code-For-Groningen/temmies/blob/6a781ad2381e642801f77173748dc74537dd5df5/docs/img/temmie.png" width= 200px/>  
 </p>
 <p align="center">
 <a href="https://temmies.confest.im"><img alt="Read the Docs" src="https://img.shields.io/readthedocs/temmies"></a>
