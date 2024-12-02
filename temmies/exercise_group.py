@@ -1,12 +1,15 @@
-from .group import Group
-from .submission import Submission
+"""
+Represents a submittable exercise.
+"""
+
 from bs4 import BeautifulSoup
+from .group import Group
 
 class ExerciseGroup(Group):
     """
     Represents a submittable exercise.
     """
-
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(self, session, path: str, title: str, parent, submitable: bool = True):
         super().__init__(session, path, title, parent, submitable=submitable)
         self.submit_url = f"{self.base_url}/api/submit{self.path}"

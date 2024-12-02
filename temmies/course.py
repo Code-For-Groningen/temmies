@@ -1,5 +1,10 @@
-from .group import Group
+"""
+Represents a course.
+A course is a group that contains exercises or other groups.
+"""
 
+from .group import Group
+from .exercise_group import ExerciseGroup
 
 class Course(Group):
     """
@@ -25,11 +30,11 @@ class Course(Group):
                 self,
                 item_data.get("submitable", False),
             )
-        else:
-            return Group(
-                self.session,
-                item_data["path"],
-                item_data["title"],
-                self,
-                item_data.get("submitable", False),
-            )
+
+        return Group(
+            self.session,
+            item_data["path"],
+            item_data["title"],
+            self,
+            item_data.get("submitable", False),
+        )

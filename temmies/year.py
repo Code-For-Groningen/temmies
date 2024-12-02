@@ -1,5 +1,11 @@
-from .course import Course
+"""
+This module defines the Year class for managing academic year courses.
+"""
+
 from bs4 import BeautifulSoup
+from .course import Course
+
+
 class Year:
     """
     Represents an academic year.
@@ -37,8 +43,6 @@ class Year:
                 return course
         raise ValueError(f"Course '{course_title}' not found in year {self.year_path}.")
 
-    from bs4 import BeautifulSoup
-
     def get_course_by_tag(self, course_tag: str) -> Course:
         """
         Gets a course by its tag (course identifier).
@@ -49,18 +53,21 @@ class Year:
 
         response = self.session.get(course_url)
         if response.status_code != 200:
-            raise ConnectionError(f"Failed to retrieve course with tag '{course_tag}' for year {self.year_path}. Tried {course_url}")
+            raise ConnectionError(
+                f"Failed to retrieve course '{course_tag}' for year {self.year_path}."
+            )
 
         soup = BeautifulSoup(response.text, "lxml")
 
         title_elements = soup.find_all("a", class_="fill accent large")
-        if title_elements:
-            title_element = title_elements[-1]
+        title_element = title_elements[-1] if title_elements else None
 
         if title_element:
             course_title = title_element.get_text(strip=True)
         else:
-            raise ValueError(f"Could not retrieve course title for tag '{course_tag}' in year {self.year_path}.")
+            raise ValueError(
+                f"Could not retrieve course title for tag '{course_tag}' in year {self.year_path}."
+            )
 
         return Course(self.session, course_path, course_title, self)
 

@@ -82,13 +82,22 @@ class Submission:
 
     # Deprecated methods
     def info(self):
+        """
+        Deprecated method. Use get_info instead.
+        """
         print("This method is deprecated and will be deleted soon. Use get_info instead.")
         return self.get_info()
 
     def test_cases(self):
+        """
+        Deprecated method. Use get_test_cases instead.
+        """
         print("This method is deprecated and will be deleted in soon. Use get_test_cases instead.")
         return self.get_test_cases()
 
     def files(self):
+        """
+        Deprecated method. Use get_files instead.
+        """
         print("This method is deprecated and will be deleted in soon. Use get_files instead.")
         return self.get_files()

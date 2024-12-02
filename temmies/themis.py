@@ -2,12 +2,12 @@
 Main class for the Themis API using the new JSON endpoints.
 """
 
-import keyring
 import getpass
+import keyring
 from requests import Session
 from bs4 import BeautifulSoup
 from .year import Year
-from .exceptions.illegal_action import IllegalAction
+
 
 class Themis:
     """
@@ -34,6 +34,7 @@ class Themis:
         self.password = self.__get_password()
         self.base_url = "https://themis.housing.rug.nl"
         self.session = self.login(self.user, self.password)
+
     def __get_password(self) -> str:
         """
         Retrieve the password from the keyring, prompting the user if not found.
@@ -41,7 +42,8 @@ class Themis:
         password = keyring.get_password(f"{self.user}-temmies", self.user)
         if not password:
             print(f"Password for user '{self.user}' not found in keyring.")
-            password = getpass.getpass(prompt=f"Enter password for {self.user}: ")
+            password = getpass.getpass(
+                prompt=f"Enter password for {self.user}: ")
             keyring.set_password(f"{self.user}-temmies", self.user, password)
             print("Password saved securely in keyring.")
         return password
@@ -85,7 +87,8 @@ class Themis:
             passwd = getpass.getpass(prompt="Enter password: ")
             keyring.set_password(f'{self.user}-temmies', self.user, passwd)
             return self.login(user, passwd)
-        elif "Welcome, logged in as" not in response.text:
+
+        if "Welcome, logged in as" not in response.text:
             raise ValueError("Login failed for an unknown reason.")
 
         return session
@@ -95,7 +98,7 @@ class Themis:
         Gets a Year object using the year path (e.g., 2023, 2024).
         """
         year_path = f"{start_year}-{end_year}"
-        
+
         return Year(self.session, year_path)
 
     def all_years(self) -> list:
