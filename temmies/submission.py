@@ -4,6 +4,7 @@
 File to define the Submission class
 """
 
+from typing import Optional
 from bs4 import BeautifulSoup
 
 class Submission:
@@ -48,7 +49,7 @@ class Submission:
 
         return results
 
-    def get_info(self) -> dict[str, str] | None:
+    def get_info(self) -> Optional[dict[str, str]]:
         """Submission information (in details)"""
         if self.__info:
             return self.__info
@@ -74,7 +75,7 @@ class Submission:
                 return self.__info
         return None
 
-    def get_files(self) -> list[str] | None:
+    def get_files(self) -> Optional[list[str]]:
         """Get a list of uploaded files in the format [(name, url)]"""
         if not self.__info:
             self.__info = self.get_info()
