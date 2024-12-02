@@ -4,6 +4,8 @@ import os
 from typing import Optional, Union, Dict
 from .exceptions.illegal_action import IllegalAction
 from .submission import Submission
+from json import loads
+from time import sleep
 
 class Group:
     """
@@ -280,14 +282,22 @@ class Group:
     def __parse_table(self, soup: BeautifulSoup, url: str, verbose: bool, __printed: list) -> dict:
         """
         Parse the results table from the submission result page.
+        Wait until all queued status-icons disappear before parsing.
         """
         cases = soup.find_all("tr", class_="sub-casetop")
         fail_pass = {}
+        any_queued = False
+
         for case in cases:
-            name = case.find("td", class_="sub-casename").text
+            name = case.find("td", class_="sub-casename").text.strip()
             status = case.find("td", class_="status-icon")
 
-            if "pending" in status.get("class"):
+            status_classes = status.get("class", [])
+            if "queued" in status_classes:
+                any_queued = True
+                break
+
+            if "pending" in status_classes:
                 sleep(1)
                 return self.__wait_for_result(url, verbose, __printed)
 
@@ -299,20 +309,31 @@ class Group:
             }
 
             found = False
-            for k, v in statuses.items():
-                if k in status.text:
+            for key, (symbol, value) in statuses.items():
+                if key.lower() in status.text.lower():
                     found = True
-                    if verbose and int(name) not in __printed:
-                        print(f"{name}: {v[0]}")
-                    fail_pass[int(name)] = v[1]
+                    case_number = int(name)
+                    if verbose and case_number not in __printed:
+                        print(f"Case {case_number}: {symbol}")
+                    fail_pass[case_number] = value
                     break
-            if not found:
-                fail_pass[int(name)] = None
-                if verbose and int(name) not in __printed:
-                    print(f"{name}: Unrecognized status: {status.text}")
 
-            __printed.append(int(name))
+            if not found:
+                case_number = int(name)
+                fail_pass[case_number] = None
+                if verbose and case_number not in __printed:
+                    print(f"{case_number}: Unrecognized status: {status.text.strip()}")
+
+            __printed.append(case_number)
+
+        # Polling
+        # FIXME: Use ws
+        if any_queued:
+            sleep(1)
+            return self.__wait_for_result(url, verbose, __printed)
+
         return fail_pass
+
 
     def __str__(self):
         return f"Group({self.title}, submitable={self.submitable})"
