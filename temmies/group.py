@@ -342,8 +342,7 @@ class Group:
                 case_number = int(name)
                 fail_pass[case_number] = None
                 if verbose and case_number not in __printed:
-                    print(f"{case_number}: Unrecognized status: {
-                          status.text.strip()}")
+                    print(f"{case_number}: Unrecognized status: {status.text.strip()}")
 
             __printed.append(case_number)
 
