@@ -36,8 +36,7 @@ class Group:
         # Fetch the page and parse it
         response = self.session.get(group_url)
         if response.status_code != 200:
-            raise ConnectionError(f"Failed to retrieve page for '{
-                                  self.title}'. Tried {group_url}")
+            raise ConnectionError(f"Failed to retrieve page for '{self.title}'.")
         self._raw = BeautifulSoup(response.text, "lxml")
 
     def get_items(self) -> list:
