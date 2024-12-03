@@ -15,7 +15,7 @@ A python library which interacts with [Themis](https://themis.housing.rug.nl/). 
 * [x] Submission status
 
 ## Docs
-- [here](http://temmies.confest.im/).
+- [Click here](http://temmies.confest.im/).
 
 ## Possible continuations
 * Discord bot
