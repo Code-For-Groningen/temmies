@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
     
 setup(
     name="temmies",
-    version="1.2.121",
+    version="1.2.124",
     packages=find_packages(),
     description="A wrapper for the Themis website",
     long_description=l_description,
@@ -25,7 +25,8 @@ setup(
         "requests",
         "lxml",
         "beautifulsoup4",
-        "keyring"
+        "keyring",
+        "selenium",
     ],
     python_requires=">=3.9",
 )
