@@ -2,12 +2,14 @@
 Main class for the Themis API using the new JSON endpoints.
 """
 
+from requests import Session
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
+from json import dumps
+from .year import Year
 import getpass
 import keyring
-from requests import Session
-from bs4 import BeautifulSoup
-from .year import Year
-
 
 class Themis:
     """
@@ -17,7 +19,7 @@ class Themis:
     - all_years: Get all years
     """
 
-    def __init__(self, user: str):
+    def __init__(self, cookies: dict = None, user=None):
         """
         Initialize Themis object, logging in with the given user.
 
@@ -30,12 +32,25 @@ class Themis:
             base_url (str): Base URL of the Themis website.
             session (requests.Session): Authenticated session.
         """
-        self.user = user
-        self.password = self.__get_password()
         self.base_url = "https://themis.housing.rug.nl"
-        self.session = self.login(self.user, self.password)
-
-    def __get_password(self) -> str:
+        self.session = self._setup_agent()
+        
+        self.user, self.password = None, None
+        
+        # Old login logic
+        if user:
+            self.user = user
+            self.password = self._get_password()
+        
+        # Reusing session logic
+        if not cookies:
+            self.session = self.login(self.session)
+        else:
+            self.session.cookies.update(cookies)
+            if not self.check_session():
+                self.session = self.login(self.session)
+    
+    def _get_password(self) -> str:
         """
         Retrieve the password from the keyring, prompting the user if not found.
         """
@@ -48,12 +63,9 @@ class Themis:
             print("Password saved securely in keyring.")
         return password
 
-    def login(self, user: str, passwd: str) -> Session:
-        """
-        Login to Themis using the original method, parsing CSRF token from the login page.
-        """
+    def _setup_agent(self) -> Session:
+
         session = Session()
-        login_url = f"{self.base_url}/log/in"
 
         user_agent = (
             "Mozilla/5.0 (X11; Linux x86_64) "
@@ -61,37 +73,66 @@ class Themis:
             "Chromium/80.0.3987.160 Chrome/80.0.3987.163 Safari/537.36"
         )
 
-        headers = {"user-agent": user_agent}
-
-        data = {"user": user, "password": passwd, "null": None}
-
-        # Get login page to retrieve CSRF token
-        response = session.get(login_url, headers=headers, verify=False)
-        if response.status_code != 200:
-            raise ConnectionError("Failed to connect to Themis login page.")
-
-        # Parse CSRF token from login page
-        soup = BeautifulSoup(response.text, "lxml")
-        csrf_input = soup.find("input", attrs={"name": "_csrf"})
-        if not csrf_input or not csrf_input.get("value"):
-            raise ValueError("Unable to retrieve CSRF token.")
-        csrf_token = csrf_input["value"]
-        data["_csrf"] = csrf_token
-        data["sudo"] = user.lower()
-
-        # Attempt login
-        response = session.post(login_url, data=data, headers=headers)
-        if "Invalid credentials" in response.text:
-            # Prompt for password again
-            print("Invalid credentials. Please try again.")
-            passwd = getpass.getpass(prompt="Enter password: ")
-            keyring.set_password(f'{self.user}-temmies', self.user, passwd)
-            return self.login(user, passwd)
-
-        if "Welcome, logged in as" not in response.text:
-            raise ValueError("Login failed for an unknown reason.")
+        session.headers.update({"User-Agent": user_agent})
 
         return session
+
+    def check_session(self) -> bool:
+        """
+        Check if the session is still valid.
+        """
+        
+        # look at the /login and find a pre tag
+        login_url = f"{self.base_url}/login"
+        response = self.session.get(login_url)
+        return "pre" in response.text
+    
+        
+    def login(self, session: Session) -> Session:
+        """
+        Login to Themis by spawning a selenium browser, logging in and storing the session.
+        """
+
+        login_url = f"{self.base_url}/login"
+
+        # Start a full browser to login
+        driver = webdriver.Chrome()
+
+        driver.get(login_url)
+
+        while True:
+            if driver.find_elements(By.TAG_NAME, "pre"):
+                break
+            
+            try:
+                # if any of the fields are already filled, don't fill them
+                if  (passw := driver.find_element(By.NAME, "Ecom_Password")) and not passw.get_attribute("value") and self.password:
+                    passw.send_keys(self.password)
+                if  (user := driver.find_element(By.NAME, "Ecom_User_ID")) and not user.get_attribute("value") and self.user:
+                    user.send_keys(self.user)
+                
+            except NoSuchElementException:
+                pass
+                
+        
+        # destroy the password from memory (security)
+        self.password = "I-HAVE-BEEN-REMOVED"
+        
+        # export all stored cookies
+        cookies = driver.get_cookies()
+        driver.quit()
+
+        # add all cookies to the session
+        for cookie in cookies:
+            session.cookies.set(cookie["name"], cookie["value"])
+
+        return session
+
+    def get_session_cookies(self):
+        """
+        Get the session cookies in json
+        """
+        return dumps(self.session.cookies.get_dict())
 
     def get_year(self, start_year: int = None, end_year: int = None) -> Year:
         """
