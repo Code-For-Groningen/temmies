@@ -5,7 +5,7 @@ Main class for the Themis API using the new JSON endpoints.
 from requests import Session
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from json import dumps
 from .year import Year
 import getpass
@@ -113,7 +113,9 @@ class Themis:
                 
             except NoSuchElementException:
                 pass
-                
+            
+            except StaleElementReferenceException:
+                pass
         
         # destroy the password from memory (security)
         self.password = "I-HAVE-BEEN-REMOVED"
