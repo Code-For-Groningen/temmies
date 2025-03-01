@@ -4,6 +4,10 @@ Main class for the Themis API using the new JSON endpoints.
 
 from requests import Session
 from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from json import dumps
@@ -90,43 +94,47 @@ class Themis:
         
     def login(self, session: Session) -> Session:
         """
-        Login to Themis by spawning a selenium browser, logging in and storing the session.
+        Login to Themis by spawning a selenium browser
         """
-
         login_url = f"{self.base_url}/login"
-
-        # Start a full browser to login
         driver = webdriver.Chrome()
 
         driver.get(login_url)
 
-        while True:
-            if driver.find_elements(By.TAG_NAME, "pre"):
-                break
-            
-            try:
-                # if any of the fields are already filled, don't fill them
-                if  (passw := driver.find_element(By.NAME, "Ecom_Password")) and not passw.get_attribute("value") and self.password:
-                    passw.send_keys(self.password)
-                if  (user := driver.find_element(By.NAME, "Ecom_User_ID")) and not user.get_attribute("value") and self.user:
-                    user.send_keys(self.user)
-                
-            except NoSuchElementException:
-                pass
-            
-            except StaleElementReferenceException:
-                pass
-        
-        # destroy the password from memory (security)
-        self.password = "I-HAVE-BEEN-REMOVED"
-        
-        # export all stored cookies
-        cookies = driver.get_cookies()
-        driver.quit()
+        wait = WebDriverWait(driver, 60)
 
-        # add all cookies to the session
+        try:
+            wait.until(EC.url_contains("signon.rug.nl/nidp/saml2/sso"))
+            current_url = driver.current_url
+
+            # If on the sign-on page fill in the credentials
+            if "signon.rug.nl/nidp/saml2/sso" in current_url:
+                user_field = wait.until(EC.presence_of_element_located((By.NAME, "Ecom_User_ID")))
+                pass_field = wait.until(EC.presence_of_element_located((By.NAME, "Ecom_Password")))
+                
+                if self.user and not user_field.get_attribute("value"):
+                    user_field.clear()
+                    user_field.send_keys(self.user)
+                if self.password and not pass_field.get_attribute("value"):
+                    pass_field.clear()
+                    pass_field.send_keys(self.password)
+            
+            # THIS IS LIKELY TO BREAK AT SOME POINT
+            wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, "body"), "Cannot GET"))
+            
+        except TimeoutException:
+            print("Timeout waiting for login/2FA page to load.")
+        except (NoSuchElementException, StaleElementReferenceException) as e:
+            print(f"Encountered an error: {e}")
+        finally:
+            # security
+            self.password = "I-HAVE-BEEN-REMOVED"
+            cookies = driver.get_cookies()
+            driver.quit()
+
+        # Add all cookies to the session.
         for cookie in cookies:
-            session.cookies.set(cookie["name"], cookie["value"])
+            session.cookies.set(name=cookie["name"], value=cookie["value"])
 
         return session
 
