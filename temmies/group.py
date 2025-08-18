@@ -1,15 +1,22 @@
-from bs4 import BeautifulSoup
-from requests import Session
+"""
+Abstract-ish Group class for Themis API.
+"""
+
 import os
 from typing import Optional, Union, Dict
-from .exceptions.illegal_action import IllegalAction
+from json import loads
+from time import sleep
+from bs4 import BeautifulSoup
 from .submission import Submission
+
 
 class Group:
     """
-    Represents an item in Themis, which can be either a folder (non-submittable) or an assignment (submittable).
+    Represents an item in Themis.
+    Can be either a folder (non-submittable) or an assignment (submittable).
     """
 
+    # pylint: disable=too-many-instance-attributes, too-many-arguments, too-many-positional-arguments
     def __init__(self, session, path: str, title: str, parent=None, submitable: bool = False):
         self.session = session
         self.path = path  # e.g., '/2023-2024/adinc-ai/labs'
@@ -29,9 +36,8 @@ class Group:
         # Fetch the page and parse it
         response = self.session.get(group_url)
         if response.status_code != 200:
-            raise ConnectionError(f"Failed to retrieve page for '{self.title}'. Tried {group_url}")
+            raise ConnectionError(f"Failed to retrieve page for '{self.title}'.")
         self._raw = BeautifulSoup(response.text, "lxml")
-
 
     def get_items(self) -> list:
         """
@@ -68,19 +74,20 @@ class Group:
                 return item
         raise ValueError(f"Item '{title}' not found under {self.title}.")
 
-
     def get_status(self, text: bool = False) -> Union[Dict[str, Union[str, 'Submission']], None]:
         """
         Get the status of the current group, if available.
         """
         status_link = self._raw.find("a", text="Status")
         if not status_link:
-            raise ValueError("Status information is not available for this group.")
+            raise ValueError(
+                "Status information is not available for this group.")
 
         status_url = f"{self.base_url}{status_link['href']}"
         response = self.session.get(status_url)
         if response.status_code != 200:
-            raise ConnectionError(f"Failed to retrieve status page for '{self.title}'.")
+            raise ConnectionError(
+                f"Failed to retrieve status page for '{self.title}'.")
 
         soup = BeautifulSoup(response.text, "lxml")
         section = soup.find("div", class_="cfg-container")
@@ -90,7 +97,10 @@ class Group:
 
         return self.__parse_status_section(section, text)
 
-    def __parse_status_section(self, section: BeautifulSoup, text: bool) -> Dict[str, Union[str, 'Submission']]:
+    def __parse_status_section(
+        self, section: BeautifulSoup,
+        text: bool
+    ) -> Dict[str, Union[str, 'Submission']]:
         """
         Parse the status section of the group and clean up keys.
         """
@@ -111,8 +121,10 @@ class Group:
                 continue
 
             # Normalize key
-            raw_key = " ".join(key_element.get_text(separator=" ").strip().replace(":", "").lower().split())
-            key = key_mapping.get(raw_key, raw_key)  # Use mapped key if available
+            raw_key = " ".join(key_element.get_text(
+                separator=" ").strip().replace(":", "").lower().split())
+            # Use mapped key if available
+            key = key_mapping.get(raw_key, raw_key)
 
             # Process value
             link = value_element.find("a", href=True)
@@ -122,7 +134,8 @@ class Group:
                 if href.startswith("/"):
                     submission_url = href
                 elif href.startswith("http"):
-                    submission_url = href.replace("https://themis.housing.rug.nl", "")
+                    submission_url = href.replace(
+                        "https://themis.housing.rug.nl", "")
                 else:
                     print(f"Invalid href '{href}' found in status page.")
                     continue  # Skip this entry if href is invalid
@@ -135,13 +148,13 @@ class Group:
 
         return parsed
 
-
     def get_test_cases(self) -> list[Dict[str, str]]:
         """
         Get all test cases for this assignment.
         """
         if not self.submitable:
-            raise ValueError(f"No test cases for non-submittable item '{self.title}'.")
+            raise ValueError(
+                f"No test cases for non-submittable item '{self.title}'.")
 
         sections = self._raw.find_all("div", class_="subsec round shade")
         tcs = []
@@ -180,7 +193,8 @@ class Group:
         """
         Get all downloadable files for this assignment.
         """
-        details = self._raw.find("div", id=lambda x: x and x.startswith("details"))
+        details = self._raw.find(
+            "div", id=lambda x: x and x.startswith("details"))
         if not details:
             return []
 
@@ -219,13 +233,21 @@ class Group:
                 print(f"Failed to download file '{file['title']}'")
         return downloaded
 
-    def submit(self, files: list[str], judge: bool = True, wait: bool = True, silent: bool = True) -> Optional[dict]:
+    # pylint: disable=too-many-locals
+    def submit(
+        self,
+        files: list[str],
+        judge: bool = True,
+        wait: bool = True,
+        silent: bool = True
+    ) -> Optional[dict]:
         """
         Submit files to this assignment.
         Returns a dictionary of test case results or None if wait is False.
         """
         if not self.submitable:
-            raise ValueError(f"Cannot submit to non-submittable item '{self.title}'.")
+            raise ValueError(
+                f"Cannot submit to non-submittable item '{self.title}'.")
 
         form = self._raw.find("form")
         if not form:
@@ -280,14 +302,22 @@ class Group:
     def __parse_table(self, soup: BeautifulSoup, url: str, verbose: bool, __printed: list) -> dict:
         """
         Parse the results table from the submission result page.
+        Wait until all queued status-icons disappear before parsing.
         """
         cases = soup.find_all("tr", class_="sub-casetop")
         fail_pass = {}
+        any_queued = False
+
         for case in cases:
-            name = case.find("td", class_="sub-casename").text
+            name = case.find("td", class_="sub-casename").text.strip()
             status = case.find("td", class_="status-icon")
 
-            if "pending" in status.get("class"):
+            status_classes = status.get("class", [])
+            if "queued" in status_classes:
+                any_queued = True
+                break
+
+            if "pending" in status_classes:
                 sleep(1)
                 return self.__wait_for_result(url, verbose, __printed)
 
@@ -299,19 +329,28 @@ class Group:
             }
 
             found = False
-            for k, v in statuses.items():
-                if k in status.text:
+            for key, (symbol, value) in statuses.items():
+                if key.lower() in status.text.lower():
                     found = True
-                    if verbose and int(name) not in __printed:
-                        print(f"{name}: {v[0]}")
-                    fail_pass[int(name)] = v[1]
+                    case_number = int(name)
+                    if verbose and case_number not in __printed:
+                        print(f"Case {case_number}: {symbol}")
+                    fail_pass[case_number] = value
                     break
-            if not found:
-                fail_pass[int(name)] = None
-                if verbose and int(name) not in __printed:
-                    print(f"{name}: Unrecognized status: {status.text}")
 
-            __printed.append(int(name))
+            if not found:
+                case_number = int(name)
+                fail_pass[case_number] = None
+                if verbose and case_number not in __printed:
+                    print(f"{case_number}: Unrecognized status: {status.text.strip()}")
+
+            __printed.append(case_number)
+
+        # Polling (fix, use ws)
+        if any_queued:
+            sleep(1)
+            return self.__wait_for_result(url, verbose, __printed)
+
         return fail_pass
 
     def __str__(self):

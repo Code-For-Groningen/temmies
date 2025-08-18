@@ -2,12 +2,18 @@
 Main class for the Themis API using the new JSON endpoints.
 """
 
-import keyring
-import getpass
 from requests import Session
-from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
+from json import dumps
 from .year import Year
-from .exceptions.illegal_action import IllegalAction
+import getpass
+import keyring
 
 class Themis:
     """
@@ -17,7 +23,7 @@ class Themis:
     - all_years: Get all years
     """
 
-    def __init__(self, user: str):
+    def __init__(self, cookies: dict = None, user=None):
         """
         Initialize Themis object, logging in with the given user.
 
@@ -30,28 +36,40 @@ class Themis:
             base_url (str): Base URL of the Themis website.
             session (requests.Session): Authenticated session.
         """
-        self.user = user
-        self.password = self.__get_password()
         self.base_url = "https://themis.housing.rug.nl"
-        self.session = self.login(self.user, self.password)
-    def __get_password(self) -> str:
+        self.session = self._setup_agent()
+        
+        self.user, self.password = None, None
+        
+        # Old login logic
+        if user:
+            self.user = user
+            self.password = self._get_password()
+        
+        # Reusing session logic
+        if not cookies:
+            self.session = self.login(self.session)
+        else:
+            self.session.cookies.update(cookies)
+            if not self.check_session():
+                self.session = self.login(self.session)
+    
+    def _get_password(self) -> str:
         """
         Retrieve the password from the keyring, prompting the user if not found.
         """
         password = keyring.get_password(f"{self.user}-temmies", self.user)
         if not password:
             print(f"Password for user '{self.user}' not found in keyring.")
-            password = getpass.getpass(prompt=f"Enter password for {self.user}: ")
+            password = getpass.getpass(
+                prompt=f"Enter password for {self.user}: ")
             keyring.set_password(f"{self.user}-temmies", self.user, password)
             print("Password saved securely in keyring.")
         return password
 
-    def login(self, user: str, passwd: str) -> Session:
-        """
-        Login to Themis using the original method, parsing CSRF token from the login page.
-        """
+    def _setup_agent(self) -> Session:
+
         session = Session()
-        login_url = f"{self.base_url}/log/in"
 
         user_agent = (
             "Mozilla/5.0 (X11; Linux x86_64) "
@@ -59,43 +77,79 @@ class Themis:
             "Chromium/80.0.3987.160 Chrome/80.0.3987.163 Safari/537.36"
         )
 
-        headers = {"user-agent": user_agent}
-
-        data = {"user": user, "password": passwd, "null": None}
-
-        # Get login page to retrieve CSRF token
-        response = session.get(login_url, headers=headers, verify=False)
-        if response.status_code != 200:
-            raise ConnectionError("Failed to connect to Themis login page.")
-
-        # Parse CSRF token from login page
-        soup = BeautifulSoup(response.text, "lxml")
-        csrf_input = soup.find("input", attrs={"name": "_csrf"})
-        if not csrf_input or not csrf_input.get("value"):
-            raise ValueError("Unable to retrieve CSRF token.")
-        csrf_token = csrf_input["value"]
-        data["_csrf"] = csrf_token
-        data["sudo"] = user.lower()
-
-        # Attempt login
-        response = session.post(login_url, data=data, headers=headers)
-        if "Invalid credentials" in response.text:
-            # Prompt for password again
-            print("Invalid credentials. Please try again.")
-            passwd = getpass.getpass(prompt="Enter password: ")
-            keyring.set_password(f'{self.user}-temmies', self.user, passwd)
-            return self.login(user, passwd)
-        elif "Welcome, logged in as" not in response.text:
-            raise ValueError("Login failed for an unknown reason.")
+        session.headers.update({"User-Agent": user_agent})
 
         return session
+
+    def check_session(self) -> bool:
+        """
+        Check if the session is still valid.
+        """
+        
+        # look at the /login and find a pre tag
+        login_url = f"{self.base_url}/login"
+        response = self.session.get(login_url)
+        return "pre" in response.text
+    
+        
+    def login(self, session: Session) -> Session:
+        """
+        Login to Themis by spawning a selenium browser
+        """
+        login_url = f"{self.base_url}/login"
+        driver = webdriver.Chrome()
+
+        driver.get(login_url)
+
+        wait = WebDriverWait(driver, 60)
+
+        try:
+            wait.until(EC.url_contains("signon.rug.nl/nidp/saml2/sso"))
+            current_url = driver.current_url
+
+            # If on the sign-on page fill in the credentials
+            if "signon.rug.nl/nidp/saml2/sso" in current_url:
+                user_field = wait.until(EC.presence_of_element_located((By.NAME, "Ecom_User_ID")))
+                pass_field = wait.until(EC.presence_of_element_located((By.NAME, "Ecom_Password")))
+                
+                if self.user and not user_field.get_attribute("value"):
+                    user_field.clear()
+                    user_field.send_keys(self.user)
+                if self.password and not pass_field.get_attribute("value"):
+                    pass_field.clear()
+                    pass_field.send_keys(self.password)
+            
+            # THIS IS LIKELY TO BREAK AT SOME POINT
+            wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, "body"), "Cannot GET"))
+            
+        except TimeoutException:
+            print("Timeout waiting for login/2FA page to load.")
+        except (NoSuchElementException, StaleElementReferenceException) as e:
+            print(f"Encountered an error: {e}")
+        finally:
+            # security
+            self.password = "I-HAVE-BEEN-REMOVED"
+            cookies = driver.get_cookies()
+            driver.quit()
+
+        # Add all cookies to the session.
+        for cookie in cookies:
+            session.cookies.set(name=cookie["name"], value=cookie["value"])
+
+        return session
+
+    def get_session_cookies(self):
+        """
+        Get the session cookies in json
+        """
+        return dumps(self.session.cookies.get_dict())
 
     def get_year(self, start_year: int = None, end_year: int = None) -> Year:
         """
         Gets a Year object using the year path (e.g., 2023, 2024).
         """
         year_path = f"{start_year}-{end_year}"
-        
+
         return Year(self.session, year_path)
 
     def all_years(self) -> list:
