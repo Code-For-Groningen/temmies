@@ -15,7 +15,7 @@ from .year import Year
 import getpass
 import keyring
 
-from .exceptions import SessionExpired
+from .exceptions import SessionExpired, SessionRefreshed
 
 class Themis:
     """
@@ -107,7 +107,7 @@ class Themis:
             
             if should_reauth:
                 if self._relogin_attempted:
-                    raise SessionExpired(
+                    raise SessionRefreshed(
                         "Session expired and automatic re-login already attempted. Please create a new Themis() instance."
                     )
                 
@@ -115,7 +115,7 @@ class Themis:
                 
                 self.refresh_cookies()
                 
-                raise SessionExpired(
+                raise SessionRefreshed(
                     "Session expired. Cookies have been refreshed. Please retry your request."
                 )
 
