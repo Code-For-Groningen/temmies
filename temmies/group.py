@@ -2,10 +2,12 @@
 Abstract-ish Group class for Themis API.
 """
 
+
 import os
-from typing import Optional, Union, Dict
 from json import loads
 from time import sleep
+from typing import Any
+
 from bs4 import BeautifulSoup
 from .submission import Submission
 
@@ -39,7 +41,7 @@ class Group:
             raise ConnectionError(f"Failed to retrieve page for '{self.title}'.")
         self._raw = BeautifulSoup(response.text, "lxml")
 
-    def get_items(self) -> list:
+    def get_items(self) -> list['Group']:
         """
         Get all items (groups and assignments) under this group.
         """
@@ -74,7 +76,7 @@ class Group:
                 return item
         raise ValueError(f"Item '{title}' not found under {self.title}.")
 
-    def get_status(self, text: bool = False) -> Union[Dict[str, Union[str, 'Submission']], None]:
+    def get_status(self, text: bool = False) -> dict[str, str | Submission] | None:
         """
         Get the status of the current group, if available.
         """
@@ -100,7 +102,7 @@ class Group:
     def __parse_status_section(
         self, section: BeautifulSoup,
         text: bool
-    ) -> Dict[str, Union[str, 'Submission']]:
+    ) -> dict[str, str | Submission]:
         """
         Parse the status section of the group and clean up keys.
         """
@@ -148,7 +150,7 @@ class Group:
 
         return parsed
 
-    def get_test_cases(self) -> list[Dict[str, str]]:
+    def get_test_cases(self) -> list[dict[str, str]]:
         """
         Get all test cases for this assignment.
         """
@@ -189,7 +191,7 @@ class Group:
                 print(f"Failed to download test case '{tc['title']}'")
         return downloaded
 
-    def get_files(self) -> list[Dict[str, str]]:
+    def get_files(self) -> list[dict[str, str]]:
         """
         Get all downloadable files for this assignment.
         """
@@ -240,8 +242,8 @@ class Group:
         judge: bool = True,
         wait: bool = True,
         silent: bool = True,
-        sudo: Optional[str] = None
-    ) -> Optional[dict]:
+        sudo: str | None = None
+    ) -> dict[int, bool | None] | str | None:
         """
         Submit files to this assignment.
         Returns a dictionary of test case results or None if wait is False.
@@ -252,13 +254,14 @@ class Group:
 
         form = self._raw.find("form")
         if not form:
+            # try to check log in
             raise ValueError("Submission form not found.")
 
         url = f"{self.base_url}{form['action']}"
         if sudo:
             url += f"?sudo={sudo}"
 
-        file_types = loads(form.get("data-suffixes", "{}"))
+        file_types: dict[str, Any] = loads(form.get("data-suffixes", "{}"))
 
         if isinstance(files, str):
             files = [files]
@@ -295,26 +298,30 @@ class Group:
 
         return self.__wait_for_result(resp.url, not silent, [])
 
-    def __wait_for_result(self, url: str, verbose: bool, __printed: list) -> dict:
+    def __wait_for_result(self, url: str, verbose: bool, _printed: list[int]) -> dict[int, bool | None]:
         """
         Wait for the submission result and return the test case results.
         """
         r = self.session.get(url)
         soup = BeautifulSoup(r.text, "lxml")
-        return self.__parse_table(soup, url, verbose, __printed)
+        return self.__parse_table(soup, url, verbose, _printed)
 
-    def __parse_table(self, soup: BeautifulSoup, url: str, verbose: bool, __printed: list) -> dict:
+    def __parse_table(
+        self, soup: BeautifulSoup, url: str, verbose: bool, _printed: list[int]
+    ) -> dict[int, bool | None]:
         """
         Parse the results table from the submission result page.
         Wait until all queued status-icons disappear before parsing.
         """
         cases = soup.find_all("tr", class_="sub-casetop")
-        fail_pass = {}
+        fail_pass: dict[int, bool | None] = {}
         any_queued = False
 
         for case in cases:
             name = case.find("td", class_="sub-casename").text.strip()
             status = case.find("td", class_="status-icon")
+
+            case_number = int(name)
 
             status_classes = status.get("class", [])
             if "queued" in status_classes:
@@ -323,7 +330,7 @@ class Group:
 
             if "pending" in status_classes:
                 sleep(1)
-                return self.__wait_for_result(url, verbose, __printed)
+                return self.__wait_for_result(url, verbose, _printed)
 
             statuses = {
                 "Passed": ("✅", True),
@@ -336,24 +343,22 @@ class Group:
             for key, (symbol, value) in statuses.items():
                 if key.lower() in status.text.lower():
                     found = True
-                    case_number = int(name)
-                    if verbose and case_number not in __printed:
+                    if verbose and case_number not in _printed:
                         print(f"Case {case_number}: {symbol}")
                     fail_pass[case_number] = value
                     break
 
             if not found:
-                case_number = int(name)
                 fail_pass[case_number] = None
-                if verbose and case_number not in __printed:
+                if verbose and case_number not in _printed:
                     print(f"{case_number}: Unrecognized status: {status.text.strip()}")
 
-            __printed.append(case_number)
+            _printed.append(case_number)
 
         # Polling (fix, use ws)
         if any_queued:
             sleep(1)
-            return self.__wait_for_result(url, verbose, __printed)
+            return self.__wait_for_result(url, verbose, _printed)
 
         return fail_pass
 
