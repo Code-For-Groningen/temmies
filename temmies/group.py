@@ -239,7 +239,8 @@ class Group:
         files: list[str],
         judge: bool = True,
         wait: bool = True,
-        silent: bool = True
+        silent: bool = True,
+        sudo: Optional[str] = None
     ) -> Optional[dict]:
         """
         Submit files to this assignment.
@@ -254,6 +255,9 @@ class Group:
             raise ValueError("Submission form not found.")
 
         url = f"{self.base_url}{form['action']}"
+        if sudo:
+            url += f"?sudo={sudo}"
+
         file_types = loads(form.get("data-suffixes", "{}"))
 
         if isinstance(files, str):
