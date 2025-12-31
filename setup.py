@@ -14,6 +14,7 @@ setup(
     author="Boyan K.",
     author_email="boyan@confest.im",
     license="GPLv3",
+    license_files=("LICENSE",),
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
