@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
     
 setup(
     name="temmies",
-    version="1.2.124",
+    version="1.2.125",
     packages=find_packages(),
     description="A wrapper for the Themis website",
     long_description=l_description,

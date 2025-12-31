@@ -1,6 +1,6 @@
-"""
-Main class for the Themis API using the new JSON endpoints.
-"""
+"""Main class for the Themis API using the new JSON endpoints."""
+# pyright: basic
+from __future__ import annotations
 
 from requests import Session
 from selenium import webdriver
@@ -14,6 +14,8 @@ from json import dumps
 from .year import Year
 import getpass
 import keyring
+
+from .exceptions import SessionExpired, SessionRefreshed
 
 class Themis:
     """
@@ -37,6 +39,7 @@ class Themis:
             session (requests.Session): Authenticated session.
         """
         self.base_url = "https://themis.housing.rug.nl"
+        self._relogin_attempted = False
         self.session = self._setup_agent()
         
         self.user, self.password = None, None
@@ -52,7 +55,13 @@ class Themis:
         else:
             self.session.cookies.update(cookies)
             if not self.check_session():
-                self.session = self.login(self.session)
+                # Attempt to refresh stale cookies
+                try:
+                    self.refresh_cookies()
+                except SessionExpired:
+                    raise SessionExpired(
+                        "Provided cookies are stale or malformed and re-authentication failed. Please create a new Themis() instance without cookies."
+                    )
     
     def _get_password(self) -> str:
         """
@@ -79,17 +88,85 @@ class Themis:
 
         session.headers.update({"User-Agent": user_agent})
 
+        def _raise_if_session_expired(response, *args, **kwargs):  # noqa: ANN001
+            request_url = getattr(getattr(response, "request", None), "url", "") or ""
+            final_url = getattr(response, "url", "") or ""
+
+            should_reauth = False
+            
+            if "/login" in final_url and ("/login" not in request_url):
+                should_reauth = True
+            elif getattr(response, "status_code", None) in (401, 403):
+                should_reauth = True
+            else:
+                content_type = (response.headers.get("Content-Type") or "").lower()
+                if "text/html" in content_type and ("/login" not in request_url):
+                    body = response.text or ""
+                    if "signon.rug.nl" in body:
+                        should_reauth = True
+            
+            if should_reauth:
+                if self._relogin_attempted:
+                    raise SessionRefreshed(
+                        "Session expired and automatic re-login already attempted. Please create a new Themis() instance."
+                    )
+                
+                self._relogin_attempted = True
+                
+                self.refresh_cookies()
+                
+                raise SessionRefreshed(
+                    "Session expired. Cookies have been refreshed. Please retry your request."
+                )
+
+            return response
+
+        # clean hook solution
+        hooks = session.hooks.get("response", [])
+        if _raise_if_session_expired not in hooks:
+            hooks.append(_raise_if_session_expired)
+            session.hooks["response"] = hooks
+
         return session
 
     def check_session(self) -> bool:
         """
         Check if the session is still valid.
         """
+
+        # fuck you matt
+        navigation_url = f"{self.base_url}/api/navigation/"
         
-        # look at the /login and find a pre tag
-        login_url = f"{self.base_url}/login"
-        response = self.session.get(login_url)
-        return "pre" in response.text
+        original_hooks = self.session.hooks.get("response", [])
+        self.session.hooks["response"] = []
+        
+        try:
+            response = self.session.get(navigation_url)
+            
+            if response.status_code != 200:
+                return False
+
+            try:
+                response.json()
+            except ValueError:
+                return False
+
+            return True
+        finally:
+            self.session.hooks["response"] = original_hooks
+    
+    def refresh_cookies(self) -> None:
+        """
+        Refresh/replace session cookies by re-authenticating.
+        Raises SessionExpired if re-authentication fails.
+        """
+        self.session.cookies.clear()
+        self._relogin_attempted = False
+        self.session = self.login(self.session)
+        if not self.check_session():
+            raise SessionExpired(
+                "Failed to refresh session cookies. Re-authentication was attempted but the session is still invalid."
+            )
     
         
     def login(self, session: Session) -> Session:
